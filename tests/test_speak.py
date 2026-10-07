@@ -32,7 +32,7 @@ def _mp_state(state="on", volume=0.8):
 
     return FakeState(
         state,
-        {"volume_level": volume, "supported_features": int(MediaPlayerEntityFeature.TURN_ON)},
+        {"volume_level": volume, "supported_features": int(MediaPlayerEntityFeature.TURN_ON | MediaPlayerEntityFeature.VOLUME_SET)},
     )
 
 
@@ -104,3 +104,17 @@ def test_async_speak_service_error(fake_hass, monkeypatch):
 def test_media_player_volume_unknown_is_none(fake_hass):
     hass, _ = fake_hass()
     assert speak.media_player_volume(hass, "media_player.sala") is None
+
+
+def test_async_speak_skips_volume_without_volume_set_feature(fake_hass):
+    from conftest import FakeState
+
+    hass, _ = fake_hass(
+        {
+            "media_player.sala": FakeState(
+                "on", {"volume_level": 0.8, "supported_features": 0}
+            )
+        }
+    )
+    _run(speak.async_speak(hass, _config(), "Hello"))
+    assert not any(c[1] == "volume_set" for c in hass.calls)

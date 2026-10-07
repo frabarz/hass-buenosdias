@@ -82,15 +82,21 @@ async def async_speak(hass: HomeAssistant, config: dict, text: str) -> None:
 
     state = hass.states.get(media_player)
     supports_turn_on = False
+    supports_volume_set = False
     if state is not None:
-        turn_on_flag = int(state.attributes.get("supported_features") or 0)
-        supports_turn_on = bool(turn_on_flag & MediaPlayerEntityFeature.TURN_ON)
+        feature_flags = int(state.attributes.get("supported_features") or 0)
+        supports_turn_on = bool(feature_flags & MediaPlayerEntityFeature.TURN_ON)
+        supports_volume_set = bool(
+            feature_flags & MediaPlayerEntityFeature.VOLUME_SET
+        )
     if state is None or (
         supports_turn_on and state.state in ("off", "standby", "idle")
     ):
         await _call(hass, "media_player", "turn_on", {"entity_id": media_player})
 
-    if previous_volume is None or previous_volume != volume:
+    if supports_volume_set and (
+        previous_volume is None or previous_volume != volume
+    ):
         await _call(
             hass,
             "media_player",
@@ -110,7 +116,12 @@ async def async_speak(hass: HomeAssistant, config: dict, text: str) -> None:
         },
     )
 
-    if restore_volume and previous_volume is not None and previous_volume != volume:
+    if (
+        restore_volume
+        and supports_volume_set
+        and previous_volume is not None
+        and previous_volume != volume
+    ):
         await _call(
             hass,
             "media_player",
