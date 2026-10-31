@@ -10,13 +10,13 @@ TTS. HACS-installable repo **and** Nix flake (`packages`, `devShells`,
 - Integration code: `custom_components/buenosdias/` (domain `buenosdias`,
   config-flow-only, `single_config_entry`, runtime `requirements`:
   `feedparser`, `httpx`).
-- Nix package: `nixos/overlay.nix` (via `buildHomeAssistantComponent`),
-  exposed as `packages.<system>.default`.
+- Nix package: `pkgs/buenosdias-ha/package.nix` (via
+  `buildHomeAssistantComponent`), exposed as `packages.<system>.default`.
 - Config flow: LLM connection only (HA conversation agent or OpenAI-compatible,
   probed with `GET /models`); everything else lives in the options flow.
 - Options: script/persona, TTS, sources, RSS feeds, schedule.
 - Packaging versions must match in `const.py`, `manifest.json`,
-  `pyproject.toml`, and `nixos/overlay.nix` (currently `0.3.2`).
+  `pyproject.toml`, and `pkgs/buenosdias-ha/package.nix` (currently `0.3.2`).
 - Toolchain: Nix flake, Python 3.13+ (dev shell 3.14), HA 2025.2+ runtime,
   `pytest` + `pytest-homeassistant-custom-component`, ruff with `select = ["ALL"]`.
 
@@ -54,7 +54,7 @@ TTS. HACS-installable repo **and** Nix flake (`packages`, `devShells`,
   Keep `inputs.nixpkgs.follows = "nixpkgs"` in the flake input. Configuration
   stays in the HA UI (no declarative YAML).
 - Version bumps: update `const.py`, `manifest.json`, `pyproject.toml`, and
-  `nixos/overlay.nix`, then run the full gate.
+  `pkgs/buenosdias-ha/package.nix`, then run the full gate.
 
 ## Testing Instructions
 

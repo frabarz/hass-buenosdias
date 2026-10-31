@@ -1,7 +1,7 @@
-# flake.nix — NixOS overlay + devShell + checks.
+# flake.nix — package, devShell, and checks.
 # Layout: custom_components/buenosdias is the HA integration, tests/ is the
-# pytest suite, nixos/overlay.nix builds it via buildHomeAssistantComponent,
-# config.example.yaml is the deprecated YAML import reference.
+# pytest suite, pkgs/buenosdias-ha packages it, config.example.yaml is the
+# deprecated YAML import reference.
 {
   description = "buenosdias: a personalized morning radio for Home Assistant with LLM";
 
@@ -16,12 +16,24 @@
     }:
     let
       system = "x86_64-linux";
-      overlay = import ./nixos/overlay.nix;
-      pkgs = import nixpkgs {
-        inherit system;
-        overlays = [ overlay ];
+      pkgs = import nixpkgs { inherit system; };
+
+      # Nix store source for the component derivation: only the integration,
+      # tests, and packaging metadata.
+      componentSrc = pkgs.lib.fileset.toSource {
+        root = ./.;
+        fileset = pkgs.lib.fileset.unions [
+          ./custom_components
+          ./tests
+          ./pyproject.toml
+        ];
       };
-      component = pkgs.home-assistant-custom-components.buenosdias;
+
+      component = pkgs.home-assistant.python3Packages.callPackage ./pkgs/buenosdias-ha/package.nix {
+        src = componentSrc;
+        inherit (pkgs) home-assistant;
+      };
+
       home-assistant = pkgs.home-assistant;
     in
     {
@@ -32,19 +44,17 @@
 
       devShells.${system}.default = pkgs.mkShell {
         packages = [
-          (
-            home-assistant.python3Packages.python.buildEnv.override {
-              extraLibs =
-                (with home-assistant.python3Packages; [
-                  pytest
-                  pytest-homeassistant-custom-component
-                  feedparser
-                  httpx
-                ])
-                ++ (home-assistant.getPackages "switch" home-assistant.python3Packages)
-                ++ (home-assistant.getPackages "sensor" home-assistant.python3Packages);
-            }
-          )
+          (home-assistant.python3Packages.python.buildEnv.override {
+            extraLibs =
+              (with home-assistant.python3Packages; [
+                pytest
+                pytest-homeassistant-custom-component
+                feedparser
+                httpx
+              ])
+              ++ (home-assistant.getPackages "switch" home-assistant.python3Packages)
+              ++ (home-assistant.getPackages "sensor" home-assistant.python3Packages);
+          })
         ];
         shellHook = ''
           echo "buenosdias dev shell (Python 3.14 + Home Assistant). Run: pytest -q"
