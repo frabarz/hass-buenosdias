@@ -1,20 +1,16 @@
 {
-  config,
   pkgs,
-  lib,
+  inputs,
   ...
 }:
-let
-  overlay = import ./overlay.nix;
-in
 {
   imports = [ ];
-  nixpkgs.overlays = [ overlay ];
-
   services.home-assistant = {
     enable = true;
-    # You can add more components, e.g. [ "frigate" "buenosdias" ].
-    customComponents = [ pkgs.home-assistant-custom-components.buenosdias ];
+    # You can add more component derivations to this list.
+    customComponents = [
+      inputs.buenosdias.packages.${pkgs.stdenv.hostPlatform.system}.default
+    ];
 
     # NOTE (v0.2.0): the integration is configured through the HA UI config
     # flow (Settings → Devices & Services → Add Integration → "Buenos Días");

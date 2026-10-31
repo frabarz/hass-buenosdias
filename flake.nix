@@ -25,16 +25,6 @@
       home-assistant = pkgs.home-assistant;
     in
     {
-      overlays.default = overlay;
-
-      nixosModules.default = {
-        lib,
-        pkgs,
-        ...
-      }: {
-        nixpkgs.overlays = [ overlay ];
-      };
-
       packages.${system} = {
         inherit component;
         default = component;

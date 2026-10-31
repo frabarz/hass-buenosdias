@@ -29,22 +29,35 @@ Copy `custom_components/buenosdias` into `<config>/custom_components` and restar
 
 ### NixOS
 
-The flake exposes `home-assistant-custom-components.buenosdias`:
+The flake exposes the component as `packages.<system>.default`:
 
 ```nix
 {
-  inputs.buenosdias.url = "github:frabarz/buenosdias";
+  inputs.buenosdias = {
+    url = "github:frabarz/buenosdias";
+    inputs.nixpkgs.follows = "nixpkgs";
+  };
+
   outputs = { self, nixpkgs, buenosdias, ... }: {
     nixosConfigurations.my = nixpkgs.lib.nixosSystem {
       system = "x86_64-linux";
       modules = [
-        buenosdias.nixosModules.default
-        { services.home-assistant.customComponents = [ buenosdias.packages.x86_64-linux.default ]; }
+        {
+          services.home-assistant = {
+            enable = true;
+            customComponents = [
+              buenosdias.packages.${pkgs.stdenv.hostPlatform.system}.default
+            ];
+          };
+        }
       ];
     };
   };
 }
 ```
+
+Keep `inputs.nixpkgs.follows = "nixpkgs"` so the component is built against the
+same Home Assistant version you run.
 
 ## First run
 
