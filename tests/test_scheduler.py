@@ -214,6 +214,25 @@ def test_async_setup_scheduler_reregisters_on_change(
     assert fake_trackers.track_calls[-1]["minute"] == 45
 
 
+def test_async_setup_scheduler_state_listener_is_callback(
+    fake_hass, fake_trackers
+) -> None:
+    from homeassistant.core import is_callback
+
+    hass, _ = fake_hass(
+        states={"sensor.alarm": type("S", (), {"state": "07:30"})()}
+    )
+    scheduler.async_setup_scheduler(
+        hass,
+        {CONF_SCHEDULE: {CONF_TIME_ENTITY: "sensor.alarm"}},
+        lambda now: None,
+    )
+
+    # Non-callback listeners are inferred as executor jobs, which would run
+    # _on_state_change in a worker thread and make hass.async_create_task unsafe.
+    assert is_callback(fake_trackers.state_change_calls[-1]["action"])
+
+
 def test_async_setup_scheduler_on_rearm_called_on_change(
     fake_hass, fake_trackers
 ):

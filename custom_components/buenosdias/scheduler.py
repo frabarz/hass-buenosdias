@@ -25,6 +25,7 @@ from datetime import date, datetime, time, timedelta
 from typing import TYPE_CHECKING, Any
 
 from homeassistant.components.calendar.const import DATA_COMPONENT as CALENDAR_COMPONENT
+from homeassistant.core import callback as ha_callback
 from homeassistant.helpers import event as ha_event
 from homeassistant.util import dt as dt_util
 
@@ -294,6 +295,7 @@ def async_setup_scheduler(
 
     if time_entity:
 
+        @ha_callback
         def _on_state_change(event) -> None:
             nonlocal unsub_time, unsub_preload
             if unsub_time is not None:
