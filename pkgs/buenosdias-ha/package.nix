@@ -6,7 +6,6 @@
   lib,
   buildHomeAssistantComponent,
   feedparser,
-  httpx,
   pytestCheckHook,
   pytest-homeassistant-custom-component,
   home-assistant,
@@ -22,7 +21,6 @@ buildHomeAssistantComponent rec {
 
   dependencies = [
     feedparser
-    httpx
   ];
 
   nativeCheckInputs = [

@@ -50,7 +50,6 @@
                 pytest
                 pytest-homeassistant-custom-component
                 feedparser
-                httpx
               ])
               ++ (home-assistant.getPackages "switch" home-assistant.python3Packages)
               ++ (home-assistant.getPackages "sensor" home-assistant.python3Packages);

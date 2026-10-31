@@ -16,9 +16,9 @@ schedule) is configured in the integration options. See
 ## Manual install
 
 Copy `custom_components/buenosdias/` into your Home Assistant
-`config/custom_components/` directory and restart. Home Assistant installs the
-manifest requirements (`feedparser`, `httpx`). Requires Home Assistant 2025.2+
-(Python ≥ 3.13).
+`config/custom_components/` directory and restart. The manifest declares
+`feedparser`; `httpx` is already bundled with Home Assistant. Requires Home
+Assistant 2025.2+ (Python ≥ 3.13).
 
 ## Via the NixOS flake
 

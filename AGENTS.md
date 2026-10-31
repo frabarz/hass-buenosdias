@@ -9,7 +9,8 @@ TTS. HACS-installable repo **and** Nix flake (`packages`, `devShells`,
 
 - Integration code: `custom_components/buenosdias/` (domain `buenosdias`,
   config-flow-only, `single_config_entry`, runtime `requirements`:
-  `feedparser`, `httpx`).
+  `feedparser`; `httpx` comes bundled with Home Assistant and is used through
+  `homeassistant.helpers.httpx_client`).
 - Nix package: `pkgs/buenosdias-ha/package.nix` (via
   `buildHomeAssistantComponent`), exposed as `packages.<system>.default`.
 - Config flow: LLM connection only (HA conversation agent or OpenAI-compatible,

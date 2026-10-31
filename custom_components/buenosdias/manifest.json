@@ -7,7 +7,7 @@
   "integration_type": "service",
   "iot_class": "local_polling",
   "issue_tracker": "https://github.com/frabarz/buenosdias/issues",
-  "requirements": ["feedparser", "httpx"],
+  "requirements": ["feedparser"],
   "single_config_entry": true,
   "version": "0.3.2"
 }
