@@ -5,6 +5,8 @@ import voluptuous as vol
 
 from custom_components.buenosdias.config_schema import CONFIG_SCHEMA
 from custom_components.buenosdias.const import (
+    CONF_FORECAST_LIMIT,
+    CONF_FORECAST_TYPE,
     CONF_HOLIDAY_CALENDAR,
     CONF_LLM,
     CONF_MODE,
@@ -16,6 +18,8 @@ from custom_components.buenosdias.const import (
     CONF_TTS,
     CONF_URL,
     DOMAIN,
+    FORECAST_DAILY,
+    FORECAST_NONE,
     KIND_EVENTS,
     MODE_HA_CONVERSATION,
 )
@@ -29,7 +33,7 @@ def test_schema_accepts_full_configuration():
             "sources": {"weather": ["weather.casa"], "sensors": ["sensor.x"]},
             "schedule": {"time": "06:30", "skip_days": ["sat", "sun"]},
             "persona": "You are a radio host.",
-        }
+        },
     }
     validated = CONFIG_SCHEMA(config)
     assert validated[DOMAIN]["llm"][CONF_MODE] == "openai_compatible"
@@ -44,18 +48,15 @@ def test_schema_applies_defaults():
     assert conf[CONF_TTS]["language"] == "es-ES"
     assert conf[CONF_TTS]["volume"] == 0.6
     assert conf[CONF_SOURCES]["weather"] == []
+    assert conf[CONF_SOURCES][CONF_FORECAST_TYPE] == FORECAST_NONE
+    assert conf[CONF_SOURCES][CONF_FORECAST_LIMIT] == 12
     assert conf[CONF_SCHEDULE][CONF_TIME] == "07:00"
 
 
 def test_schema_accepts_time_entity():
-    config = {
-        DOMAIN: {"schedule": {CONF_TIME_ENTITY: "sensor.phone_alarm"}}
-    }
+    config = {DOMAIN: {"schedule": {CONF_TIME_ENTITY: "sensor.phone_alarm"}}}
     validated = CONFIG_SCHEMA(config)
-    assert (
-        validated[DOMAIN][CONF_SCHEDULE][CONF_TIME_ENTITY]
-        == "sensor.phone_alarm"
-    )
+    assert validated[DOMAIN][CONF_SCHEDULE][CONF_TIME_ENTITY] == "sensor.phone_alarm"
 
 
 def test_schema_default_time_entity():
@@ -64,14 +65,9 @@ def test_schema_default_time_entity():
 
 
 def test_schema_accepts_holiday_calendar():
-    config = {
-        DOMAIN: {"schedule": {CONF_HOLIDAY_CALENDAR: "calendar.chile"}}
-    }
+    config = {DOMAIN: {"schedule": {CONF_HOLIDAY_CALENDAR: "calendar.chile"}}}
     validated = CONFIG_SCHEMA(config)
-    assert (
-        validated[DOMAIN][CONF_SCHEDULE][CONF_HOLIDAY_CALENDAR]
-        == "calendar.chile"
-    )
+    assert validated[DOMAIN][CONF_SCHEDULE][CONF_HOLIDAY_CALENDAR] == "calendar.chile"
 
 
 def test_schema_default_holiday_calendar():
@@ -106,10 +102,10 @@ def test_schema_accepts_rss_feeds():
                             CONF_URL: "https://example.org/agenda.xml",
                             "kind": "events",
                         },
-                    ]
-                }
-            }
-        }
+                    ],
+                },
+            },
+        },
     }
     validated = CONFIG_SCHEMA(config)
     feeds = validated[DOMAIN][CONF_SOURCES][CONF_RSS]["feeds"]
@@ -134,10 +130,41 @@ def test_schema_applies_rss_defaults():
         {DOMAIN: {"llm": {"mode": "does_not_exist"}}},
         {DOMAIN: {"llm": {"max_chars": 5}}},
         {DOMAIN: {"sources": {"rss": {"feeds": [{"url": ""}]}}}},
-        {DOMAIN: {"sources": {"rss": {"feeds": [{"url": "https://x.es", "kind": "sports"}]}}}},
-        {DOMAIN: {"sources": {"rss": {"feeds": [{"url": "https://x.es", "max_age_hours": 0}]}}}},
+        {
+            DOMAIN: {
+                "sources": {
+                    "rss": {"feeds": [{"url": "https://x.es", "kind": "sports"}]},
+                },
+            },
+        },
+        {
+            DOMAIN: {
+                "sources": {
+                    "rss": {"feeds": [{"url": "https://x.es", "max_age_hours": 0}]},
+                },
+            },
+        },
+        {DOMAIN: {"sources": {"forecast_type": "weekly"}}},
+        {DOMAIN: {"sources": {"forecast_limit": 0}}},
+        {DOMAIN: {"sources": {"forecast_limit": 100}}},
     ],
 )
 def test_schema_rejects_invalid_configuration(bad_config):
     with pytest.raises(vol.Invalid):
         CONFIG_SCHEMA(bad_config)
+
+
+def test_schema_accepts_forecast_options():
+    validated = CONFIG_SCHEMA(
+        {
+            DOMAIN: {
+                "sources": {
+                    CONF_FORECAST_TYPE: FORECAST_DAILY,
+                    CONF_FORECAST_LIMIT: 3,
+                },
+            },
+        },
+    )
+    sources = validated[DOMAIN][CONF_SOURCES]
+    assert sources[CONF_FORECAST_TYPE] == FORECAST_DAILY
+    assert sources[CONF_FORECAST_LIMIT] == 3

@@ -13,6 +13,8 @@ from .const import (
     CONF_EXCLUDE,
     CONF_FEEDS,
     CONF_FERIADOS,
+    CONF_FORECAST_LIMIT,
+    CONF_FORECAST_TYPE,
     CONF_HOLIDAY_CALENDAR,
     CONF_KIND,
     CONF_LANGUAGE,
@@ -40,9 +42,13 @@ from .const import (
     CONF_URL,
     CONF_VOLUME,
     CONF_WEATHER,
+    DEFAULT_FORECAST_LIMIT,
     DOMAIN,
+    FORECAST_NONE,
+    FORECAST_TYPES,
     KIND_EVENTS,
     KIND_NEWS,
+    MAX_FORECAST_LIMIT,
     MODE_HA_CONVERSATION,
     MODE_OPENAI_COMPATIBLE,
 )
@@ -136,6 +142,13 @@ RSS_SCHEMA = vol.Schema(
 SOURCES_SCHEMA = vol.Schema(
     {
         vol.Optional(CONF_WEATHER, default=[]): _entity_list(),
+        vol.Optional(CONF_FORECAST_TYPE, default=FORECAST_NONE): vol.In(
+            [FORECAST_NONE, *FORECAST_TYPES],
+        ),
+        vol.Optional(CONF_FORECAST_LIMIT, default=DEFAULT_FORECAST_LIMIT): vol.All(
+            vol.Coerce(int),
+            vol.Range(min=1, max=MAX_FORECAST_LIMIT),
+        ),
         vol.Optional(CONF_CALENDAR, default=[]): _entity_list(),
         vol.Optional(CONF_SENSORS, default=[]): _entity_list(),
         vol.Optional(CONF_RSS, default={}): vol.All(dict, RSS_SCHEMA),

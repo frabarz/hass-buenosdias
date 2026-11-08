@@ -63,6 +63,8 @@ from .const import (
     CONF_EXCLUDE,
     CONF_FEEDS,
     CONF_FERIADOS,
+    CONF_FORECAST_LIMIT,
+    CONF_FORECAST_TYPE,
     CONF_HOLIDAY_CALENDAR,
     CONF_KIND,
     CONF_LANGUAGE,
@@ -90,9 +92,14 @@ from .const import (
     CONF_URL,
     CONF_VOLUME,
     CONF_WEATHER,
+    DEFAULT_FORECAST_LIMIT,
     DOMAIN,
+    FORECAST_DAILY,
+    FORECAST_HOURLY,
+    FORECAST_NONE,
     KIND_EVENTS,
     KIND_NEWS,
+    MAX_FORECAST_LIMIT,
     MODE_HA_CONVERSATION,
     MODE_OPENAI_COMPATIBLE,
 )
@@ -162,6 +169,12 @@ _KINDS: list[SelectOptionDict] = [
     SelectOptionDict(label="Events", value=KIND_EVENTS),
 ]
 
+_FORECAST_TYPES: list[SelectOptionDict] = [
+    SelectOptionDict(label="Current conditions only", value=FORECAST_NONE),
+    SelectOptionDict(label="Hourly forecast", value=FORECAST_HOURLY),
+    SelectOptionDict(label="Daily forecast", value=FORECAST_DAILY),
+]
+
 STEP_LLM_OPTIONS_SCHEMA = vol.Schema(
     {
         vol.Required(CONF_MAX_CHARS): NumberSelector(
@@ -199,6 +212,24 @@ STEP_SOURCES_OPTIONS_SCHEMA = vol.Schema(
         vol.Optional(CONF_WEATHER, default=[]): EntitySelector(
             EntitySelectorConfig(domain="weather", multiple=True),
         ),
+        vol.Optional(CONF_FORECAST_TYPE, default=FORECAST_NONE): SelectSelector(
+            SelectSelectorConfig(
+                options=_FORECAST_TYPES,
+                mode=SelectSelectorMode.DROPDOWN,
+                translation_key="forecast_type",
+            ),
+        ),
+        vol.Optional(
+            CONF_FORECAST_LIMIT,
+            default=DEFAULT_FORECAST_LIMIT,
+        ): NumberSelector(
+            NumberSelectorConfig(
+                min=1,
+                max=MAX_FORECAST_LIMIT,
+                step=1,
+                mode=NumberSelectorMode.BOX,
+            ),
+        ),
         vol.Optional(CONF_CALENDAR, default=[]): EntitySelector(
             EntitySelectorConfig(domain="calendar", multiple=True),
         ),
@@ -230,9 +261,7 @@ STEP_SCHEDULE_OPTIONS_SCHEMA = vol.Schema(
         ),
         vol.Optional(CONF_SKIP_IF_EMITTED, default=True): BooleanSelector(),
         vol.Optional(CONF_PRELOAD_MINUTES, default=0): NumberSelector(
-            NumberSelectorConfig(
-                min=0, max=60, step=1, mode=NumberSelectorMode.BOX
-            ),
+            NumberSelectorConfig(min=0, max=60, step=1, mode=NumberSelectorMode.BOX),
         ),
     },
 )
@@ -720,6 +749,10 @@ class BuenosdiasOptionsFlowHandler(OptionsFlowWithConfigEntry):
             options = self._current_options()
             options[CONF_SOURCES] = {
                 CONF_WEATHER: user_input.get(CONF_WEATHER) or [],
+                CONF_FORECAST_TYPE: user_input.get(CONF_FORECAST_TYPE, FORECAST_NONE),
+                CONF_FORECAST_LIMIT: int(
+                    user_input.get(CONF_FORECAST_LIMIT, DEFAULT_FORECAST_LIMIT),
+                ),
                 CONF_CALENDAR: user_input.get(CONF_CALENDAR) or [],
                 CONF_SENSORS: user_input.get(CONF_SENSORS) or [],
                 CONF_RSS: current_sources.get(CONF_RSS, {}),
@@ -835,7 +868,8 @@ class BuenosdiasOptionsFlowHandler(OptionsFlowWithConfigEntry):
                         CONF_TIME_ENTITY: user_input.get(CONF_TIME_ENTITY) or "",
                         CONF_SKIP_DAYS: user_input.get(CONF_SKIP_DAYS) or [],
                         CONF_FERIADOS: feriados,
-                        CONF_HOLIDAY_CALENDAR: user_input.get(CONF_HOLIDAY_CALENDAR) or "",
+                        CONF_HOLIDAY_CALENDAR: user_input.get(CONF_HOLIDAY_CALENDAR)
+                        or "",
                         CONF_SKIP_IF_EMITTED: bool(
                             user_input.get(CONF_SKIP_IF_EMITTED, True),
                         ),

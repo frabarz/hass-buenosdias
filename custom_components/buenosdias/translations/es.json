@@ -114,11 +114,15 @@
         "description": "El tiempo, el calendario y los sensores que se leen cada mañana. Las fuentes RSS (noticias y eventos) se editan por separado.",
         "data": {
           "weather": "Tiempo",
+          "forecast_type": "Previsión",
+          "forecast_limit": "Entradas de previsión",
           "calendar": "Calendario",
           "sensors": "Sensores"
         },
         "data_description": {
           "weather": "Entidades de tiempo que se incluirán en el contexto.",
+          "forecast_type": "Previsión que se incluye con cada entidad de tiempo: solo condiciones actuales, por horas o diaria.",
+          "forecast_limit": "Número máximo de entradas de previsión (horas si es por horas, días si es diaria).",
           "calendar": "Entidades de calendario que se incluirán en el contexto.",
           "sensors": "Entidades de sensor que se incluirán en el contexto."
         }
@@ -212,6 +216,13 @@
       "options": {
         "news": "Noticias",
         "events": "Eventos"
+      }
+    },
+    "forecast_type": {
+      "options": {
+        "none": "Solo condiciones actuales",
+        "hourly": "Previsión por horas",
+        "daily": "Previsión diaria"
       }
     }
   }

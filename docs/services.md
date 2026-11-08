@@ -15,7 +15,8 @@ response_variable: context
 ```
 
 The response contains `timestamp`, `weather`, `calendar`, `sensors`, `news`,
-and `events`.
+and `events`. Each entry in `weather` carries the current state and attributes,
+plus a `forecast` list when a forecast type is configured in the sources step.
 
 ## `buenosdias.generate`
 

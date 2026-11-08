@@ -114,11 +114,15 @@
         "description": "The weather, calendar and sensors read each morning. The RSS feeds (news and events) are edited separately.",
         "data": {
           "weather": "Weather",
+          "forecast_type": "Forecast",
+          "forecast_limit": "Forecast entries",
           "calendar": "Calendar",
           "sensors": "Sensors"
         },
         "data_description": {
           "weather": "Weather entities to include in the context.",
+          "forecast_type": "Forecast included with each weather entity: current conditions only, hourly, or daily.",
+          "forecast_limit": "Maximum number of forecast entries to include (hours for hourly, days for daily).",
           "calendar": "Calendar entities to include in the context.",
           "sensors": "Sensor entities to include in the context."
         }
@@ -212,6 +216,13 @@
       "options": {
         "news": "News",
         "events": "Events"
+      }
+    },
+    "forecast_type": {
+      "options": {
+        "none": "Current conditions only",
+        "hourly": "Hourly forecast",
+        "daily": "Daily forecast"
       }
     }
   }

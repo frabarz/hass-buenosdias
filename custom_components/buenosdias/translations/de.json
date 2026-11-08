@@ -114,11 +114,15 @@
         "description": "Wetter, Kalender und Sensoren, die jeden Morgen gelesen werden. Die RSS-Feeds (Nachrichten und Ereignisse) werden separat bearbeitet.",
         "data": {
           "weather": "Wetter",
+          "forecast_type": "Vorhersage",
+          "forecast_limit": "Vorhersageeinträge",
           "calendar": "Kalender",
           "sensors": "Sensoren"
         },
         "data_description": {
           "weather": "Wetterentitäten, die in den Kontext aufgenommen werden.",
+          "forecast_type": "Vorhersage, die mit jeder Wetterentität aufgenommen wird: nur aktuelle Bedingungen, stündlich oder täglich.",
+          "forecast_limit": "Maximale Anzahl der Vorhersageeinträge (Stunden bei stündlich, Tage bei täglich).",
           "calendar": "Kalenderentitäten, die in den Kontext aufgenommen werden.",
           "sensors": "Sensor-Entitäten, die in den Kontext aufgenommen werden."
         }
@@ -212,6 +216,13 @@
       "options": {
         "news": "Nachrichten",
         "events": "Ereignisse"
+      }
+    },
+    "forecast_type": {
+      "options": {
+        "none": "Nur aktuelle Bedingungen",
+        "hourly": "Stündliche Vorhersage",
+        "daily": "Tägliche Vorhersage"
       }
     }
   }

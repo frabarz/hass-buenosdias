@@ -10,6 +10,8 @@ from custom_components.buenosdias.const import (
     CONF_ENTITY_ID,
     CONF_EXCLUDE,
     CONF_FERIADOS,
+    CONF_FORECAST_LIMIT,
+    CONF_FORECAST_TYPE,
     CONF_HOLIDAY_CALENDAR,
     CONF_LLM,
     CONF_MAX_AGE_HOURS,
@@ -115,6 +117,8 @@ async def test_sources_step_updates_and_keeps_rss(hass):
         result["flow_id"],
         {
             CONF_WEATHER: ["weather.casa"],
+            CONF_FORECAST_TYPE: "hourly",
+            CONF_FORECAST_LIMIT: 6,
             CONF_CALENDAR: ["calendar.familia"],
             CONF_SENSORS: [],
         },
@@ -122,6 +126,8 @@ async def test_sources_step_updates_and_keeps_rss(hass):
     assert result["type"] == FlowResultType.CREATE_ENTRY
     sources = entry.options[CONF_SOURCES]
     assert sources[CONF_WEATHER] == ["weather.casa"]
+    assert sources[CONF_FORECAST_TYPE] == "hourly"
+    assert sources[CONF_FORECAST_LIMIT] == 6
     assert sources[CONF_CALENDAR] == ["calendar.familia"]
     assert sources[CONF_SENSORS] == []
     assert sources[CONF_RSS]["feeds"][0]["url"] == "https://x/rss"
@@ -309,7 +315,8 @@ async def test_rss_edit_removes_feed(hass):
     result = await _navigate(hass, result["flow_id"], "rss_feeds")
     result = await _navigate(hass, result["flow_id"], "feed_0")
     result = await hass.config_entries.options.async_configure(
-        result["flow_id"], {CONF_URL: "https://feeds.example/blogs", CONF_CONFIRM_REMOVE: True}
+        result["flow_id"],
+        {CONF_URL: "https://feeds.example/blogs", CONF_CONFIRM_REMOVE: True},
     )
     assert result["type"] == FlowResultType.CREATE_ENTRY
     assert entry.options[CONF_SOURCES][CONF_RSS]["feeds"] == []
@@ -323,7 +330,8 @@ async def test_rss_edit_unchecked_keeps_feed(hass):
     result = await _navigate(hass, result["flow_id"], "rss_feeds")
     result = await _navigate(hass, result["flow_id"], "feed_0")
     result = await hass.config_entries.options.async_configure(
-        result["flow_id"], {CONF_URL: "https://feeds.example/blogs", CONF_CONFIRM_REMOVE: False}
+        result["flow_id"],
+        {CONF_URL: "https://feeds.example/blogs", CONF_CONFIRM_REMOVE: False},
     )
     assert result["type"] == FlowResultType.CREATE_ENTRY
     assert len(entry.options[CONF_SOURCES][CONF_RSS]["feeds"]) == 1

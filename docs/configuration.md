@@ -70,6 +70,22 @@ brief and upbeat. Highlight what matters today.
 Multi-select the weather, calendar, and sensor entities included in the morning
 context. Nothing is sent anywhere except the chosen LLM endpoint.
 
+Weather entities can also carry a forecast. The integration calls
+`weather.get_forecasts`, so the script can talk about the hours ahead instead
+of only the current conditions (Home Assistant no longer exposes forecasts as
+entity attributes).
+
+| Option | Meaning | Default |
+|---|---|---|
+| Forecast | `Current conditions only`, `Hourly forecast`, or `Daily forecast` | Current conditions only |
+| Forecast entries | Maximum entries sent to the LLM (hours for hourly, days for daily) | 12 |
+
+The forecast is attached to each weather entity in the context as a `forecast`
+list. Empty fields are dropped to keep the prompt small, and a failing forecast
+call is logged and ignored — the rest of the context is still generated. Not
+every weather integration supports both types: Tomorrow.io, for example,
+provides 24 hourly and 14 daily entries.
+
 ### RSS feeds
 
 Add, edit, or remove feeds inline. Each feed has:

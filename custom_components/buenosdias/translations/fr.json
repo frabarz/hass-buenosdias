@@ -114,11 +114,15 @@
         "description": "La météo, le calendrier et les capteurs lus chaque matin. Les flux RSS (actualités et événements) se modifient séparément.",
         "data": {
           "weather": "Météo",
+          "forecast_type": "Prévisions",
+          "forecast_limit": "Entrées de prévision",
           "calendar": "Calendrier",
           "sensors": "Capteurs"
         },
         "data_description": {
           "weather": "Entités météo à inclure dans le contexte.",
+          "forecast_type": "Prévisions incluses avec chaque entité météo : conditions actuelles uniquement, horaires ou quotidiennes.",
+          "forecast_limit": "Nombre maximal d'entrées de prévision (heures si horaire, jours si quotidienne).",
           "calendar": "Entités de calendrier à inclure dans le contexte.",
           "sensors": "Entités de capteur à inclure dans le contexte."
         }
@@ -212,6 +216,13 @@
       "options": {
         "news": "Actualités",
         "events": "Événements"
+      }
+    },
+    "forecast_type": {
+      "options": {
+        "none": "Conditions actuelles uniquement",
+        "hourly": "Prévisions horaires",
+        "daily": "Prévisions quotidiennes"
       }
     }
   }
