@@ -7,9 +7,12 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 from custom_components.buenosdias.const import (
     CONF_CALENDAR,
     CONF_CONFIRM_REMOVE,
+    CONF_ENABLED,
+    CONF_ENQUEUE,
     CONF_ENTITY_ID,
     CONF_EXCLUDE,
     CONF_FERIADOS,
+    CONF_FOLLOWUP,
     CONF_FORECAST_LIMIT,
     CONF_FORECAST_TYPE,
     CONF_HOLIDAY_CALENDAR,
@@ -17,18 +20,33 @@ from custom_components.buenosdias.const import (
     CONF_MAX_AGE_HOURS,
     CONF_MAX_CHARS,
     CONF_MAX_ITEMS,
+    CONF_MEDIA_CONTENT_ID,
+    CONF_MEDIA_CONTENT_TYPE,
+    CONF_MEDIA_ID,
     CONF_MEDIA_PLAYER,
+    CONF_MEDIA_TYPE,
     CONF_PERSONA,
+    CONF_PLAYER,
     CONF_RSS,
     CONF_SCHEDULE,
+    CONF_SCRIPT,
     CONF_SENSORS,
     CONF_SOURCES,
     CONF_TAGS,
     CONF_TIME,
+    CONF_TIMEOUT,
     CONF_TTS,
+    CONF_TYPE,
     CONF_URL,
+    CONF_VOLUME,
+    CONF_WAIT,
     CONF_WEATHER,
+    CONF_WHEN,
     DOMAIN,
+    FOLLOWUP_MEDIA_PLAYER,
+    FOLLOWUP_MUSIC_ASSISTANT,
+    FOLLOWUP_NONE,
+    FOLLOWUP_SCRIPT,
     KIND_EVENTS,
 )
 
@@ -66,6 +84,7 @@ async def test_init_shows_menu(hass):
     assert set(result["menu_options"]) == {
         "llm",
         "tts",
+        "followup",
         "sources",
         "rss_feeds",
         "schedule",
@@ -335,3 +354,180 @@ async def test_rss_edit_unchecked_keeps_feed(hass):
     )
     assert result["type"] == FlowResultType.CREATE_ENTRY
     assert len(entry.options[CONF_SOURCES][CONF_RSS]["feeds"]) == 1
+
+
+# ---------- follow-up action ----------
+
+
+async def test_followup_disabled_saves_and_stops(hass):
+    entry = await _make_entry(hass)
+    result = await _start_options(hass, entry.entry_id)
+    result = await _navigate(hass, result["flow_id"], "followup")
+    assert result["step_id"] == "followup"
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"],
+        {CONF_ENABLED: False, CONF_TYPE: FOLLOWUP_SCRIPT, CONF_WHEN: "after"},
+    )
+    assert result["type"] == FlowResultType.CREATE_ENTRY
+    followup = entry.options[CONF_FOLLOWUP]
+    assert followup[CONF_ENABLED] is False
+    assert followup[CONF_TYPE] == FOLLOWUP_SCRIPT
+    assert CONF_SCRIPT not in followup
+
+
+async def test_followup_none_type_saves_without_a_target_step(hass):
+    entry = await _make_entry(hass)
+    result = await _start_options(hass, entry.entry_id)
+    result = await _navigate(hass, result["flow_id"], "followup")
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"],
+        {CONF_ENABLED: True, CONF_TYPE: FOLLOWUP_NONE, CONF_WHEN: "after"},
+    )
+    assert result["type"] == FlowResultType.CREATE_ENTRY
+    assert entry.options[CONF_FOLLOWUP][CONF_TYPE] == FOLLOWUP_NONE
+
+
+async def test_followup_script_flow(hass):
+    entry = await _make_entry(hass)
+    result = await _start_options(hass, entry.entry_id)
+    result = await _navigate(hass, result["flow_id"], "followup")
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"],
+        {
+            CONF_ENABLED: True,
+            CONF_TYPE: FOLLOWUP_SCRIPT,
+            CONF_WHEN: "after",
+            CONF_WAIT: True,
+            CONF_TIMEOUT: 90,
+        },
+    )
+    assert result["step_id"] == "followup_script"
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"],
+        {CONF_SCRIPT: "script.morning_music"},
+    )
+    assert result["type"] == FlowResultType.CREATE_ENTRY
+    followup = entry.options[CONF_FOLLOWUP]
+    assert followup[CONF_ENABLED] is True
+    assert followup[CONF_SCRIPT] == "script.morning_music"
+    assert followup[CONF_TIMEOUT] == 90
+    assert followup[CONF_WAIT] is True
+
+
+async def test_followup_script_requires_a_script(hass):
+    entry = await _make_entry(hass)
+    result = await _start_options(hass, entry.entry_id)
+    result = await _navigate(hass, result["flow_id"], "followup")
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"],
+        {CONF_ENABLED: True, CONF_TYPE: FOLLOWUP_SCRIPT},
+    )
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"],
+        {},
+    )
+    assert result["type"] == FlowResultType.FORM
+    assert result["step_id"] == "followup_script"
+    assert result["errors"] == {"base": "incomplete_followup"}
+
+
+async def test_followup_music_assistant_flow(hass):
+    entry = await _make_entry(hass)
+    result = await _start_options(hass, entry.entry_id)
+    result = await _navigate(hass, result["flow_id"], "followup")
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"],
+        {CONF_ENABLED: True, CONF_TYPE: FOLLOWUP_MUSIC_ASSISTANT, CONF_WHEN: "before"},
+    )
+    assert result["step_id"] == "followup_music_assistant"
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"],
+        {
+            CONF_PLAYER: "media_player.cocina",
+            CONF_MEDIA_ID: "library://playlist/3",
+            CONF_MEDIA_TYPE: "playlist",
+            CONF_ENQUEUE: "replace",
+            CONF_VOLUME: 0.3,
+        },
+    )
+    assert result["type"] == FlowResultType.CREATE_ENTRY
+    followup = entry.options[CONF_FOLLOWUP]
+    assert followup[CONF_PLAYER] == "media_player.cocina"
+    assert followup[CONF_MEDIA_ID] == "library://playlist/3"
+    assert followup[CONF_WHEN] == "before"
+    assert followup[CONF_VOLUME] == 0.3
+
+
+async def test_followup_music_assistant_requires_player_and_media(hass):
+    entry = await _make_entry(hass)
+    result = await _start_options(hass, entry.entry_id)
+    result = await _navigate(hass, result["flow_id"], "followup")
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"],
+        {CONF_ENABLED: True, CONF_TYPE: FOLLOWUP_MUSIC_ASSISTANT},
+    )
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"],
+        {CONF_PLAYER: "media_player.cocina", CONF_MEDIA_ID: "  "},
+    )
+    assert result["type"] == FlowResultType.FORM
+    assert result["errors"] == {"base": "incomplete_followup"}
+
+
+async def test_followup_media_player_flow_keeps_other_options(hass):
+    entry = await _make_entry(
+        hass,
+        options={
+            CONF_TTS: {
+                CONF_ENTITY_ID: "tts.piper",
+                CONF_MEDIA_PLAYER: "media_player.sala",
+            }
+        },
+    )
+    result = await _start_options(hass, entry.entry_id)
+    result = await _navigate(hass, result["flow_id"], "followup")
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"],
+        {CONF_ENABLED: True, CONF_TYPE: FOLLOWUP_MEDIA_PLAYER},
+    )
+    assert result["step_id"] == "followup_media_player"
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"],
+        {
+            CONF_PLAYER: "media_player.salon",
+            CONF_MEDIA_CONTENT_ID: "http://radio/stream.mp3",
+            CONF_MEDIA_CONTENT_TYPE: "music",
+        },
+    )
+    assert result["type"] == FlowResultType.CREATE_ENTRY
+    followup = entry.options[CONF_FOLLOWUP]
+    assert followup[CONF_MEDIA_CONTENT_ID] == "http://radio/stream.mp3"
+    assert followup[CONF_MEDIA_CONTENT_TYPE] == "music"
+    assert entry.options[CONF_TTS][CONF_ENTITY_ID] == "tts.piper"
+
+
+async def test_followup_form_prefills_saved_values(hass):
+    entry = await _make_entry(
+        hass,
+        options={
+            CONF_FOLLOWUP: {
+                CONF_ENABLED: True,
+                CONF_TYPE: FOLLOWUP_MUSIC_ASSISTANT,
+                CONF_WHEN: "before",
+                CONF_PLAYER: "media_player.cocina",
+                CONF_MEDIA_ID: "library://playlist/3",
+                CONF_TIMEOUT: 45,
+            },
+        },
+    )
+    result = await _start_options(hass, entry.entry_id)
+    result = await _navigate(hass, result["flow_id"], "followup")
+    suggested = {
+        key.schema: key.description["suggested_value"]
+        for key in result["data_schema"].schema
+        if key.description and "suggested_value" in key.description
+    }
+    assert suggested[CONF_ENABLED] is True
+    assert suggested[CONF_TYPE] == FOLLOWUP_MUSIC_ASSISTANT
+    assert suggested[CONF_WHEN] == "before"
+    assert suggested[CONF_TIMEOUT] == 45

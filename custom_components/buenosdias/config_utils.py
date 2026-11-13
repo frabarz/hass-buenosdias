@@ -10,6 +10,7 @@ import voluptuous as vol
 
 from .config_schema import BUENOSDIAS_SCHEMA
 from .const import (
+    CONF_FOLLOWUP,
     CONF_LLM,
     CONF_OPENAI,
     CONF_PERSONA,
@@ -42,6 +43,7 @@ def build_config(data: Mapping[str, Any], options: Mapping[str, Any]) -> dict[st
         CONF_TTS: dict(options.get(CONF_TTS, {})),
         CONF_SOURCES: dict(options.get(CONF_SOURCES, {})),
         CONF_SCHEDULE: dict(options.get(CONF_SCHEDULE, {})),
+        CONF_FOLLOWUP: dict(options.get(CONF_FOLLOWUP, {})),
         CONF_PERSONA: options.get(CONF_PERSONA, ""),
     }
 

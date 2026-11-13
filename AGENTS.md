@@ -32,7 +32,11 @@ TTS. HACS-installable repo **and** Nix flake (`packages`, `devShells`,
 ## Development Workflow
 
 - Pipeline: `sources.py` (HA entities + RSS) → `script.py`/`prompts.py` →
-  `llm.py` → `speak.py`, orchestrated by `coordinator.py`.
+  `llm.py` → `speak.py`, orchestrated by `coordinator.py`. The optional
+  `followup.py` runs a script / Music Assistant playlist / media_player media
+  around the announcement: `coordinator.async_emit_script` owns the ordering
+  (action → speak → wait → action) and `speak.PlaybackWatcher` provides the
+  "announcement finished" signal that HA core does not emit.
 - LLM clients in `llm.py`: `HAConversationLLM` (`conversation.async_converse`),
   `OpenAICompatLLM` (`/chat/completions`), `FallbackLLM`.
 - Scheduling in `scheduler.py` (`time` / `time_entity`, `skip_days`,

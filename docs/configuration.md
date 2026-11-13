@@ -31,7 +31,7 @@ asking for a new key.
 
 ## Options
 
-Open the integration card → **Configure**. The menu has five sections.
+Open the integration card → **Configure**. The menu has six sections.
 
 ### Script and voice
 
@@ -119,5 +119,65 @@ When a time entity is set it takes precedence over the fixed time, and the
 alarm is re-armed whenever the sensor changes (useful for a phone's next-alarm
 sensor). `preload_minutes` is disabled at `0`; `2`–`3` is the recommended range
 so the cached voice plays instantly at alarm time.
+
+### Follow-up action
+
+Optional. Runs something around the announcement: start a playlist once the
+greeting ends, or put music underneath it. Disabled by default.
+
+| Option | Meaning | Default |
+|---|---|---|
+| Enable the follow-up | Master switch for the action | off |
+| When | `After the announcement` or `Before the announcement` | After |
+| Action | `Run a script`, `Play a Music Assistant playlist`, or `Play media on a media player` | No follow-up |
+| Wait for the announcement to end | Only for *After*: wait until the player stops before running the action | on |
+| Maximum wait | Give up waiting after this many seconds (5–1800) | 180 |
+
+The action type only decides which extra form appears next; the three are:
+
+- **Script** — a `script.*` entity is turned on. This is the escape hatch: the
+  script can start music from any integration, switch lights, open blinds, send
+  a notification, or call anything else.
+- **Music Assistant** — `music_assistant.play_media` on the chosen player with
+  a media URI (`library://playlist/3`, `spotify://playlist/…`), a media type
+  (playlist, album, track, artist, radio, audiobook, podcast) and the queue
+  behaviour (`play`, `replace`, `next`, `add`). Copy the URI from the Music
+  Assistant UI (three dots → *Copy URI*).
+- **Media player** — generic `media_player.play_media`: pick any player plus the
+  media content id and type it accepts (a radio stream URL, for instance).
+
+Both music types take an optional **volume**, applied before the media starts.
+Leaving it empty keeps the player's volume.
+
+#### After vs before
+
+**After** plays the greeting, waits for the announcement to finish, and only
+then runs the action. This is the useful one for any speaker: the greeting is
+never cut off by the music.
+
+The wait watches the configured media player: it looks for the state to reach
+`playing` and to leave it again. If the player never reports `playing` (some
+players do not), the action starts after about 20 seconds. If the player is
+still `playing` when **Maximum wait** runs out, the action runs anyway. Two
+consequences worth knowing:
+
+- A player that stays `playing` forever (because something else is already
+  playing on it) burns the whole timeout.
+- Turning *Wait for the announcement to end* off starts the action as soon as
+  the TTS service call returns.
+
+**Before** runs the action first and then plays the greeting *on top of it*.
+With a Music Assistant player this is exactly the "radio with the host talking
+over it" effect: `tts.speak` sends `announce=True`, so Music Assistant ducks the
+queue for the greeting and resumes it afterwards. Nothing else is involved —
+Music Assistant does the mixing.
+
+Two caveats for **Before**:
+
+- The media must be playing on the same player the greeting uses, and that
+  player must be a Music Assistant player entity. With any other player the
+  greeting simply replaces the media.
+- The TTS volume option still applies, so the greeting may play at a different
+  level than the music.
 
 Next: [Entities](entities.md).

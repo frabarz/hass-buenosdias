@@ -4,6 +4,10 @@
 dry-runs (generates the script without playing audio). Used by the
 ``buenosdias.generate``/``buenosdias.emit`` services and the daily alarm in
 :mod:`__init__`.
+
+:func:`async_emit_script` is the playback half: it wraps :func:`speak` with the
+optional follow-up action (before the announcement, after it, or both) and is
+shared with the preloaded-script path of the alarm so both behave the same.
 """
 
 from __future__ import annotations
@@ -11,8 +15,9 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING
 
-from . import script, sources
-from .speak import SpeakError, async_preload, async_speak
+from . import followup, script, sources
+from .const import CONF_MEDIA_PLAYER, CONF_TTS
+from .speak import PlaybackWatcher, SpeakError, async_preload, async_speak
 
 if TYPE_CHECKING:
     from homeassistant.core import HomeAssistant
@@ -22,6 +27,40 @@ _LOGGER = logging.getLogger(__name__)
 
 class PipelineError(Exception):
     """Error in the good-morning pipeline."""
+
+
+async def async_emit_script(
+    hass: HomeAssistant,
+    config: dict,
+    text: str,
+) -> None:
+    """Play *text* and run the follow-up action around the announcement.
+
+    Raises :class:`SpeakError` when the TTS playback itself fails; the
+    follow-up never fails.
+    """
+    follow = followup.resolve(config)
+    media_player = config.get(CONF_TTS, {}).get(CONF_MEDIA_PLAYER, "")
+    watcher = None
+    if follow.after and follow.wait and media_player:
+        watcher = PlaybackWatcher(
+            hass,
+            media_player,
+            timeout=follow.timeout,
+        ).async_start()
+
+    try:
+        if follow.before:
+            await followup.async_run(hass, config)
+        await async_speak(hass, config, text)
+        if watcher is not None:
+            await watcher.async_wait()
+    finally:
+        if watcher is not None:
+            watcher.async_stop()
+
+    if follow.after:
+        await followup.async_run(hass, config)
 
 
 async def async_run(
@@ -42,7 +81,7 @@ async def async_run(
 
     if emit:
         try:
-            await async_speak(hass, config, script_text)
+            await async_emit_script(hass, config, script_text)
         except SpeakError as err:
             msg = f"script playback failed: {err}"
             raise PipelineError(msg) from err

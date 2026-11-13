@@ -81,6 +81,7 @@
         "menu_options": {
           "llm": "Guion y voz",
           "tts": "TTS y reproductor",
+          "followup": "Acción posterior",
           "sources": "Fuentes",
           "rss_feeds": "Fuentes RSS",
           "schedule": "Programación"
@@ -107,6 +108,58 @@
           "entity_id": "La entidad del motor de texto a voz, p. ej. tts.piper.",
           "media_player": "El altavoz en el que se reproduce la radio matutina.",
           "volume": "Nivel de volumen usado durante la reproducción (0,0-1,0)."
+        }
+      },
+      "followup": {
+        "title": "Acción posterior",
+        "description": "Ejecuta algo opcionalmente alrededor del anuncio: un script, una lista de Music Assistant o música en un reproductor. Nada se ejecuta mientras esté desactivado.",
+        "data": {
+          "enabled": "Activar la acción",
+          "when": "Cuándo",
+          "type": "Acción",
+          "wait": "Esperar a que termine el anuncio",
+          "timeout": "Espera máxima (segundos)"
+        },
+        "data_description": {
+          "when": "Después ejecuta la acción al terminar el anuncio. Antes arranca primero la música para que el anuncio suene encima: Music Assistant baja el volumen de su cola y la música sigue sonando.",
+          "type": "Qué se ejecuta alrededor del anuncio.",
+          "wait": "Solo se usa con Después. Espera a que el reproductor deje de sonar antes de ejecutar la acción.",
+          "timeout": "Deja de esperar tras estos segundos y ejecuta la acción igualmente."
+        }
+      },
+      "followup_script": {
+        "title": "Acción posterior: script",
+        "description": "El script se ejecuta al empezar o al terminar el anuncio, según Cuándo.",
+        "data": {
+          "script": "Script"
+        }
+      },
+      "followup_music_assistant": {
+        "title": "Acción posterior: Music Assistant",
+        "description": "Reproduce una lista (o álbum, artista, radio) de Music Assistant en un reproductor de Music Assistant.",
+        "data": {
+          "player": "Reproductor de Music Assistant",
+          "media_id": "URI del contenido",
+          "media_type": "Tipo de contenido",
+          "enqueue": "Comportamiento de la cola",
+          "volume": "Volumen"
+        },
+        "data_description": {
+          "media_id": "La URI de Music Assistant, por ejemplo library://playlist/3 o spotify://playlist/.... Cópiala desde la interfaz de Music Assistant (tres puntos → Copiar URI).",
+          "volume": "Volumen de la música, aplicado antes de empezar (0.0-1.0). Déjalo vacío para mantener el volumen del reproductor."
+        }
+      },
+      "followup_media_player": {
+        "title": "Acción posterior: reproductor",
+        "description": "Reproduce cualquier contenido en cualquier reproductor. El identificador es el que acepte el reproductor, por ejemplo la URL de una radio.",
+        "data": {
+          "player": "Reproductor",
+          "media_content_id": "Identificador del contenido",
+          "media_content_type": "Tipo de contenido",
+          "volume": "Volumen"
+        },
+        "data_description": {
+          "volume": "Volumen de la música, aplicado antes de empezar (0.0-1.0). Déjalo vacío para mantener el volumen del reproductor."
         }
       },
       "sources": {
@@ -191,7 +244,8 @@
       "invalid_feed_url": "La URL de la fuente no es válida.",
       "invalid_date": "Introduzca una fecha ISO (AAAA-MM-DD) por línea.",
       "invalid_feed_index": "La fuente seleccionada ya no existe.",
-      "invalid_preload": "La precarga debe estar entre 0 y 60 minutos."
+      "invalid_preload": "La precarga debe estar entre 0 y 60 minutos.",
+      "incomplete_followup": "Elige un reproductor y su contenido, o un script."
     }
   },
   "selector": {
@@ -223,6 +277,39 @@
         "none": "Solo condiciones actuales",
         "hourly": "Previsión por horas",
         "daily": "Previsión diaria"
+      }
+    },
+    "followup_type": {
+      "options": {
+        "none": "Sin acción",
+        "script": "Ejecutar un script",
+        "music_assistant": "Reproducir una lista de Music Assistant",
+        "media_player": "Reproducir en un reproductor"
+      }
+    },
+    "followup_when": {
+      "options": {
+        "after": "Después del anuncio",
+        "before": "Antes del anuncio"
+      }
+    },
+    "followup_media_type": {
+      "options": {
+        "playlist": "Lista",
+        "album": "Álbum",
+        "track": "Canción",
+        "artist": "Artista",
+        "radio": "Radio",
+        "audiobook": "Audiolibro",
+        "podcast": "Pódcast"
+      }
+    },
+    "followup_enqueue": {
+      "options": {
+        "play": "Reproducir ahora",
+        "replace": "Reemplazar la cola",
+        "next": "Reproducir a continuación",
+        "add": "Añadir a la cola"
       }
     }
   }

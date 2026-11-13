@@ -81,6 +81,7 @@
         "menu_options": {
           "llm": "Skript und Stimme",
           "tts": "TTS und Player",
+          "followup": "Folgeaktion",
           "sources": "Quellen",
           "rss_feeds": "RSS-Feeds",
           "schedule": "Zeitplan"
@@ -107,6 +108,58 @@
           "entity_id": "Die Entität der Sprachausgabe-Engine, z. B. tts.piper.",
           "media_player": "Der Lautsprecher, auf dem das Morgenradio abgespielt wird.",
           "volume": "Lautstärke während der Wiedergabe (0,0–1,0)."
+        }
+      },
+      "followup": {
+        "title": "Folgeaktion",
+        "description": "Führt optional etwas rund um die Ansage aus: ein Skript, eine Music-Assistant-Playlist oder Medien auf einem Player. Solange dies deaktiviert ist, passiert nichts.",
+        "data": {
+          "enabled": "Folgeaktion aktivieren",
+          "when": "Wann",
+          "type": "Aktion",
+          "wait": "Auf das Ende der Ansage warten",
+          "timeout": "Maximale Wartezeit (Sekunden)"
+        },
+        "data_description": {
+          "when": "Danach führt die Aktion aus, sobald die Ansage vorbei ist. Davor startet zuerst die Musik, damit die Ansage darüber läuft: Music Assistant senkt seine Warteschlange ab und die Musik läuft weiter.",
+          "type": "Was rund um die Ansage ausgeführt wird.",
+          "wait": "Nur bei Danach. Wartet, bis der Player nicht mehr abspielt, bevor die Aktion läuft.",
+          "timeout": "Bricht das Warten nach diesen Sekunden ab und führt die Aktion trotzdem aus."
+        }
+      },
+      "followup_script": {
+        "title": "Folgeaktion: Skript",
+        "description": "Das Skript läuft je nach Wann beim Start oder am Ende der Ansage.",
+        "data": {
+          "script": "Skript"
+        }
+      },
+      "followup_music_assistant": {
+        "title": "Folgeaktion: Music Assistant",
+        "description": "Spielt eine Playlist (oder Album, Interpret, Radio) von Music Assistant auf einem Music-Assistant-Player.",
+        "data": {
+          "player": "Music-Assistant-Player",
+          "media_id": "Medien-URI",
+          "media_type": "Medientyp",
+          "enqueue": "Warteschlangen-Verhalten",
+          "volume": "Lautstärke"
+        },
+        "data_description": {
+          "media_id": "Die Music-Assistant-URI, z. B. library://playlist/3 oder spotify://playlist/.... In der Music-Assistant-Oberfläche kopieren (drei Punkte → URI kopieren).",
+          "volume": "Lautstärke der Medien, vor dem Start gesetzt (0.0-1.0). Leer lassen, um die Lautstärke des Players zu behalten."
+        }
+      },
+      "followup_media_player": {
+        "title": "Folgeaktion: Media Player",
+        "description": "Spielt beliebige Medien auf einem beliebigen Player. Die Content-ID ist das, was der Player akzeptiert, z. B. eine Radio-Stream-URL.",
+        "data": {
+          "player": "Media Player",
+          "media_content_id": "Content-ID",
+          "media_content_type": "Content-Typ",
+          "volume": "Lautstärke"
+        },
+        "data_description": {
+          "volume": "Lautstärke der Medien, vor dem Start gesetzt (0.0-1.0). Leer lassen, um die Lautstärke des Players zu behalten."
         }
       },
       "sources": {
@@ -191,7 +244,8 @@
       "invalid_feed_url": "Die Feed-URL ist nicht gültig.",
       "invalid_date": "Bitte geben Sie ein ISO-Datum (JJJJ-MM-TT) pro Zeile ein.",
       "invalid_feed_index": "Der ausgewählte Feed existiert nicht mehr.",
-      "invalid_preload": "Vorladen muss zwischen 0 und 60 Minuten liegen."
+      "invalid_preload": "Vorladen muss zwischen 0 und 60 Minuten liegen.",
+      "incomplete_followup": "Wähle einen Player mit Inhalt oder ein Skript."
     }
   },
   "selector": {
@@ -223,6 +277,39 @@
         "none": "Nur aktuelle Bedingungen",
         "hourly": "Stündliche Vorhersage",
         "daily": "Tägliche Vorhersage"
+      }
+    },
+    "followup_type": {
+      "options": {
+        "none": "Keine Folgeaktion",
+        "script": "Skript ausführen",
+        "music_assistant": "Music-Assistant-Playlist abspielen",
+        "media_player": "Medien auf einem Player abspielen"
+      }
+    },
+    "followup_when": {
+      "options": {
+        "after": "Nach der Ansage",
+        "before": "Vor der Ansage"
+      }
+    },
+    "followup_media_type": {
+      "options": {
+        "playlist": "Playlist",
+        "album": "Album",
+        "track": "Titel",
+        "artist": "Interpret",
+        "radio": "Radio",
+        "audiobook": "Hörbuch",
+        "podcast": "Podcast"
+      }
+    },
+    "followup_enqueue": {
+      "options": {
+        "play": "Jetzt abspielen",
+        "replace": "Warteschlange ersetzen",
+        "next": "Als Nächstes",
+        "add": "An die Warteschlange anhängen"
       }
     }
   }

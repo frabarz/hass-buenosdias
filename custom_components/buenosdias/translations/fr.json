@@ -81,6 +81,7 @@
         "menu_options": {
           "llm": "Script et voix",
           "tts": "Synthèse vocale et lecteur",
+          "followup": "Action suivante",
           "sources": "Sources",
           "rss_feeds": "Flux RSS",
           "schedule": "Programmation"
@@ -107,6 +108,58 @@
           "entity_id": "L'entité du moteur de synthèse vocale, ex. tts.piper.",
           "media_player": "L'enceinte sur laquelle la radio du matin est lue.",
           "volume": "Niveau de volume pendant la lecture (0,0–1,0)."
+        }
+      },
+      "followup": {
+        "title": "Action suivante",
+        "description": "Exécute éventuellement quelque chose autour de l'annonce : un script, une playlist Music Assistant ou des médias sur un lecteur. Rien ne s'exécute tant que c'est désactivé.",
+        "data": {
+          "enabled": "Activer l'action suivante",
+          "when": "Quand",
+          "type": "Action",
+          "wait": "Attendre la fin de l'annonce",
+          "timeout": "Attente maximale (secondes)"
+        },
+        "data_description": {
+          "when": "Après exécute l'action une fois l'annonce terminée. Avant démarre d'abord la musique pour que l'annonce passe par-dessus : Music Assistant baisse sa file d'attente et la musique continue.",
+          "type": "Ce qui s'exécute autour de l'annonce.",
+          "wait": "Uniquement avec Après. Attend que le lecteur s'arrête avant d'exécuter l'action.",
+          "timeout": "Abandonne l'attente après ce nombre de secondes et exécute l'action quand même."
+        }
+      },
+      "followup_script": {
+        "title": "Action suivante : script",
+        "description": "Le script s'exécute au début ou à la fin de l'annonce, selon Quand.",
+        "data": {
+          "script": "Script"
+        }
+      },
+      "followup_music_assistant": {
+        "title": "Action suivante : Music Assistant",
+        "description": "Joue une playlist (ou un album, un artiste, une radio) Music Assistant sur un lecteur Music Assistant.",
+        "data": {
+          "player": "Lecteur Music Assistant",
+          "media_id": "URI du média",
+          "media_type": "Type de média",
+          "enqueue": "Comportement de la file",
+          "volume": "Volume"
+        },
+        "data_description": {
+          "media_id": "L'URI Music Assistant, par exemple library://playlist/3 ou spotify://playlist/.... À copier depuis l'interface Music Assistant (trois points → Copier l'URI).",
+          "volume": "Volume des médias, appliqué avant le démarrage (0.0-1.0). Laisser vide pour garder le volume du lecteur."
+        }
+      },
+      "followup_media_player": {
+        "title": "Action suivante : lecteur",
+        "description": "Joue n'importe quel média sur n'importe quel lecteur. L'identifiant est celui accepté par le lecteur, par exemple l'URL d'une radio.",
+        "data": {
+          "player": "Lecteur",
+          "media_content_id": "Identifiant du média",
+          "media_content_type": "Type de média",
+          "volume": "Volume"
+        },
+        "data_description": {
+          "volume": "Volume des médias, appliqué avant le démarrage (0.0-1.0). Laisser vide pour garder le volume du lecteur."
         }
       },
       "sources": {
@@ -191,7 +244,8 @@
       "invalid_feed_url": "L'URL du flux n'est pas valide.",
       "invalid_date": "Saisissez une date ISO (AAAA-MM-JJ) par ligne.",
       "invalid_feed_index": "Le flux sélectionné n'existe plus.",
-      "invalid_preload": "Le préchargement doit être entre 0 et 60 minutes."
+      "invalid_preload": "Le préchargement doit être entre 0 et 60 minutes.",
+      "incomplete_followup": "Choisissez un lecteur et son média, ou un script."
     }
   },
   "selector": {
@@ -223,6 +277,39 @@
         "none": "Conditions actuelles uniquement",
         "hourly": "Prévisions horaires",
         "daily": "Prévisions quotidiennes"
+      }
+    },
+    "followup_type": {
+      "options": {
+        "none": "Aucune action",
+        "script": "Exécuter un script",
+        "music_assistant": "Jouer une playlist Music Assistant",
+        "media_player": "Jouer des médias sur un lecteur"
+      }
+    },
+    "followup_when": {
+      "options": {
+        "after": "Après l'annonce",
+        "before": "Avant l'annonce"
+      }
+    },
+    "followup_media_type": {
+      "options": {
+        "playlist": "Playlist",
+        "album": "Album",
+        "track": "Titre",
+        "artist": "Artiste",
+        "radio": "Radio",
+        "audiobook": "Livre audio",
+        "podcast": "Podcast"
+      }
+    },
+    "followup_enqueue": {
+      "options": {
+        "play": "Jouer maintenant",
+        "replace": "Remplacer la file",
+        "next": "Jouer ensuite",
+        "add": "Ajouter à la file"
       }
     }
   }

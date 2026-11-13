@@ -63,6 +63,24 @@ buenosdias:
       - "2026-01-01"
     skip_if_emitted: true
 
+  # Optional action around the announcement (music after it, or under it).
+  followup:
+    enabled: false
+    when: after              # after | before
+    type: music_assistant    # none | script | music_assistant | media_player
+    player: media_player.cocina
+    media_id: library://playlist/3
+    media_type: playlist     # playlist | album | track | artist | radio | ...
+    enqueue: replace         # play | replace | next | add
+    # type: script
+    # script: script.morning_music
+    # type: media_player
+    # media_content_id: https://stream.example/radio.mp3
+    # media_content_type: music
+    wait: true               # after only: wait for the announcement to end
+    timeout: 180
+    # volume: 0.3            # optional, applied before the action runs
+
   # The persona fully controls the script's language and style. Write it in
   # any language you want the script spoken in, e.g. a Spanish persona:
   #   "Eres el locutor de una radio matutina. Habla en español de España, con

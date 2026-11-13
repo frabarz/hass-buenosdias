@@ -5,23 +5,39 @@ import voluptuous as vol
 
 from custom_components.buenosdias.config_schema import CONFIG_SCHEMA
 from custom_components.buenosdias.const import (
+    CONF_ENABLED,
+    CONF_ENQUEUE,
+    CONF_FOLLOWUP,
     CONF_FORECAST_LIMIT,
     CONF_FORECAST_TYPE,
     CONF_HOLIDAY_CALENDAR,
     CONF_LLM,
+    CONF_MEDIA_ID,
     CONF_MODE,
+    CONF_PLAYER,
     CONF_RSS,
     CONF_SCHEDULE,
+    CONF_SCRIPT,
     CONF_SOURCES,
     CONF_TIME,
     CONF_TIME_ENTITY,
+    CONF_TIMEOUT,
     CONF_TTS,
+    CONF_TYPE,
     CONF_URL,
+    CONF_WAIT,
+    CONF_WHEN,
     DOMAIN,
+    ENQUEUE_REPLACE,
+    FOLLOWUP_MUSIC_ASSISTANT,
+    FOLLOWUP_NONE,
+    FOLLOWUP_SCRIPT,
     FORECAST_DAILY,
     FORECAST_NONE,
     KIND_EVENTS,
+    MEDIA_TYPE_PLAYLIST,
     MODE_HA_CONVERSATION,
+    WHEN_AFTER,
 )
 
 
@@ -147,11 +163,63 @@ def test_schema_applies_rss_defaults():
         {DOMAIN: {"sources": {"forecast_type": "weekly"}}},
         {DOMAIN: {"sources": {"forecast_limit": 0}}},
         {DOMAIN: {"sources": {"forecast_limit": 100}}},
+        {DOMAIN: {CONF_FOLLOWUP: {CONF_TYPE: "playlist"}}},
+        {DOMAIN: {CONF_FOLLOWUP: {CONF_WHEN: "during"}}},
+        {DOMAIN: {CONF_FOLLOWUP: {CONF_TIMEOUT: 0}}},
+        {DOMAIN: {CONF_FOLLOWUP: {"volume": 2}}},
+        {DOMAIN: {CONF_FOLLOWUP: {CONF_ENQUEUE: "append"}}},
     ],
 )
 def test_schema_rejects_invalid_configuration(bad_config):
     with pytest.raises(vol.Invalid):
         CONFIG_SCHEMA(bad_config)
+
+
+def test_schema_followup_defaults_to_disabled():
+    validated = CONFIG_SCHEMA({DOMAIN: {}})
+    followup = validated[DOMAIN][CONF_FOLLOWUP]
+    assert followup[CONF_ENABLED] is False
+    assert followup[CONF_TYPE] == FOLLOWUP_NONE
+    assert followup[CONF_WHEN] == WHEN_AFTER
+    assert followup[CONF_WAIT] is True
+    assert followup[CONF_TIMEOUT] == 180
+    assert followup["volume"] is None
+
+
+def test_schema_accepts_music_assistant_followup():
+    validated = CONFIG_SCHEMA(
+        {
+            DOMAIN: {
+                CONF_FOLLOWUP: {
+                    CONF_ENABLED: True,
+                    CONF_TYPE: FOLLOWUP_MUSIC_ASSISTANT,
+                    CONF_PLAYER: "media_player.cocina",
+                    CONF_MEDIA_ID: "library://playlist/3",
+                },
+            },
+        },
+    )
+    followup = validated[DOMAIN][CONF_FOLLOWUP]
+    assert followup[CONF_TYPE] == FOLLOWUP_MUSIC_ASSISTANT
+    assert followup[CONF_PLAYER] == "media_player.cocina"
+    assert followup[CONF_MEDIA_ID] == "library://playlist/3"
+    assert followup["media_type"] == MEDIA_TYPE_PLAYLIST
+    assert followup[CONF_ENQUEUE] == ENQUEUE_REPLACE
+
+
+def test_schema_accepts_script_followup():
+    validated = CONFIG_SCHEMA(
+        {
+            DOMAIN: {
+                CONF_FOLLOWUP: {
+                    CONF_ENABLED: True,
+                    CONF_TYPE: FOLLOWUP_SCRIPT,
+                    CONF_SCRIPT: "script.morning_music",
+                },
+            },
+        },
+    )
+    assert validated[DOMAIN][CONF_FOLLOWUP][CONF_SCRIPT] == "script.morning_music"
 
 
 def test_schema_accepts_forecast_options():

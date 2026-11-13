@@ -49,6 +49,47 @@ CONF_CONFIRM_REMOVE = "confirm_remove"
 KIND_NEWS = "news"
 KIND_EVENTS = "events"
 
+CONF_FOLLOWUP = "followup"
+CONF_ENABLED = "enabled"
+CONF_WHEN = "when"
+CONF_TYPE = "type"
+CONF_PLAYER = "player"
+CONF_MEDIA_ID = "media_id"
+CONF_MEDIA_TYPE = "media_type"
+CONF_ENQUEUE = "enqueue"
+CONF_MEDIA_CONTENT_ID = "media_content_id"
+CONF_MEDIA_CONTENT_TYPE = "media_content_type"
+CONF_SCRIPT = "script"
+CONF_WAIT = "wait"
+CONF_TIMEOUT = "timeout"
+
+WHEN_AFTER = "after"
+WHEN_BEFORE = "before"
+
+FOLLOWUP_NONE = "none"
+FOLLOWUP_SCRIPT = "script"
+FOLLOWUP_MUSIC_ASSISTANT = "music_assistant"
+FOLLOWUP_MEDIA_PLAYER = "media_player"
+
+MEDIA_TYPE_PLAYLIST = "playlist"
+MEDIA_TYPES = [
+    MEDIA_TYPE_PLAYLIST,
+    "album",
+    "track",
+    "artist",
+    "radio",
+    "audiobook",
+    "podcast",
+]
+
+ENQUEUE_PLAY = "play"
+ENQUEUE_REPLACE = "replace"
+ENQUEUE_VALUES = [ENQUEUE_PLAY, ENQUEUE_REPLACE, "next", "add"]
+
+DEFAULT_FOLLOWUP_TIMEOUT = 180
+MAX_FOLLOWUP_TIMEOUT = 1800
+DEFAULT_PLAYBACK_GRACE = 20
+
 CONF_TIME = "time"
 CONF_TIME_ENTITY = "time_entity"
 CONF_SKIP_DAYS = "skip_days"

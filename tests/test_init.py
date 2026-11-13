@@ -137,3 +137,37 @@ def test_alarm_other_error_does_not_trigger_reauth(
 ):
     entry = _run_alarm(fake_hass, fake_trackers, monkeypatch, "network is down")
     assert not entry.reauth_started
+
+def test_alarm_plays_the_preloaded_script_through_the_emit_path(
+    fake_hass,
+    fake_trackers,
+    monkeypatch,
+):
+    from datetime import UTC, datetime
+
+    from conftest import FakeEntry
+
+    from custom_components.buenosdias import coordinator
+
+    played = []
+
+    async def fake_emit(hass, config, text):
+        played.append(text)
+
+    monkeypatch.setattr(coordinator, "async_emit_script", fake_emit)
+
+    hass, _ = fake_hass()
+    entry = FakeEntry(data={})
+    asyncio.run(async_setup_entry(hass, entry))
+    now = datetime(2026, 8, 10, 7, 0, tzinfo=UTC)
+    hass.data[DOMAIN]["pending_script"] = {
+        "script": "Buenos días, precalentado",
+        "target_date": "2026-08-10",
+    }
+    callback = fake_trackers.track_calls[0]["callback"]
+    asyncio.run(callback(now))
+
+    assert played == ["Buenos días, precalentado"]
+    assert hass.data[DOMAIN]["pending_script"] is None
+    assert hass.data[DOMAIN]["store"].last_emission_date == "2026-08-10"
+    assert hass.data[DOMAIN]["store"].last_result == "ok"

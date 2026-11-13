@@ -44,6 +44,36 @@ The script was generated but TTS or the media player failed.
 - Times are local. `next_alarm` is stored in UTC, so the dashboard value may
   look offset compared with the configured local time.
 
+## The follow-up action never runs
+
+- The follow-up is only saved after the type form (script, playlist, media) is
+  submitted. Check that **Enable the follow-up** is on and the action is not
+  `No follow-up`.
+- With **After** and *Wait for the announcement to end* on, the action waits for
+  the player to leave `playing`. A player that never reports `playing` delays it
+  by about 20 seconds; one that stays `playing` (already playing something else)
+  waits for **Maximum wait**, 180 seconds by default. Lower it, or switch the
+  follow-up to **Before**.
+- The Music Assistant form needs both a player and a media URI. Copy the URI
+  from the Music Assistant UI (three dots → *Copy URI*); `library://playlist/3`
+  and `spotify://playlist/…` both work.
+- Errors from the action are logged as warnings and do **not** change
+  `last_status`: the greeting already played. Look for `followup … failed` in
+  Settings → System → Logs.
+
+## Music starts while the greeting is still playing
+
+That is **Before** working as designed. Switch to **After** if you want them in
+sequence. The reverse case — music never starting because the announcement wait
+never ends — is described above.
+
+## Music stops after "Before" with a non-Music-Assistant player
+
+Ducking is a Music Assistant feature: `tts.speak` sends `announce=True` and
+Music Assistant mixes the greeting over its queue. Other players replace what
+they are playing. Use **After** for those, or route the announcement through a
+Music Assistant player.
+
 ## No audio, but `last_status` is `ok`
 
 - Volume is `0`, or **Restore previous volume** put the player back to a muted

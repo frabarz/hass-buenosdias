@@ -81,6 +81,7 @@
         "menu_options": {
           "llm": "Script and voice",
           "tts": "TTS and player",
+          "followup": "Follow-up action",
           "sources": "Sources",
           "rss_feeds": "RSS feeds",
           "schedule": "Schedule"
@@ -107,6 +108,58 @@
           "entity_id": "The text-to-speech engine entity, e.g. tts.piper.",
           "media_player": "The speaker the morning radio plays on.",
           "volume": "Volume level used while playing (0.0-1.0)."
+        }
+      },
+      "followup": {
+        "title": "Follow-up action",
+        "description": "Optionally run something around the announcement: a script, a Music Assistant playlist, or media on a player. Nothing runs while this is disabled.",
+        "data": {
+          "enabled": "Enable the follow-up",
+          "when": "When",
+          "type": "Action",
+          "wait": "Wait for the announcement to end",
+          "timeout": "Maximum wait (seconds)"
+        },
+        "data_description": {
+          "when": "After runs the action once the announcement is over. Before starts the media first so the announcement plays on top of it: Music Assistant ducks its own queue and the music keeps playing.",
+          "type": "What runs around the announcement.",
+          "wait": "Only used with After. Wait until the player stops playing before running the action.",
+          "timeout": "Give up waiting after this many seconds and run the action anyway."
+        }
+      },
+      "followup_script": {
+        "title": "Follow-up: script",
+        "description": "The script runs when the announcement starts or ends, depending on When.",
+        "data": {
+          "script": "Script"
+        }
+      },
+      "followup_music_assistant": {
+        "title": "Follow-up: Music Assistant",
+        "description": "Plays a Music Assistant playlist (or album, artist, radio) on a Music Assistant player.",
+        "data": {
+          "player": "Music Assistant player",
+          "media_id": "Media URI",
+          "media_type": "Media type",
+          "enqueue": "Queue behaviour",
+          "volume": "Volume"
+        },
+        "data_description": {
+          "media_id": "The Media Assistant URI, e.g. library://playlist/3 or spotify://playlist/.... Copy it from the Music Assistant UI (three dots → Copy URI).",
+          "volume": "Volume for the media, applied before it starts (0.0-1.0). Leave empty to keep the player's volume."
+        }
+      },
+      "followup_media_player": {
+        "title": "Follow-up: media player",
+        "description": "Plays any media on any media player. The content id is whatever the player accepts, e.g. a radio stream URL.",
+        "data": {
+          "player": "Media player",
+          "media_content_id": "Media content id",
+          "media_content_type": "Media content type",
+          "volume": "Volume"
+        },
+        "data_description": {
+          "volume": "Volume for the media, applied before it starts (0.0-1.0). Leave empty to keep the player's volume."
         }
       },
       "sources": {
@@ -191,7 +244,8 @@
       "invalid_feed_url": "The feed URL is not valid.",
       "invalid_date": "Please enter one ISO date (YYYY-MM-DD) per line.",
       "invalid_feed_index": "The selected feed no longer exists.",
-      "invalid_preload": "Preload must be between 0 and 60 minutes."
+      "invalid_preload": "Preload must be between 0 and 60 minutes.",
+      "incomplete_followup": "Pick a player and its media, or a script."
     }
   },
   "selector": {
@@ -223,6 +277,39 @@
         "none": "Current conditions only",
         "hourly": "Hourly forecast",
         "daily": "Daily forecast"
+      }
+    },
+    "followup_type": {
+      "options": {
+        "none": "No follow-up",
+        "script": "Run a script",
+        "music_assistant": "Play a Music Assistant playlist",
+        "media_player": "Play media on a media player"
+      }
+    },
+    "followup_when": {
+      "options": {
+        "after": "After the announcement",
+        "before": "Before the announcement"
+      }
+    },
+    "followup_media_type": {
+      "options": {
+        "playlist": "Playlist",
+        "album": "Album",
+        "track": "Track",
+        "artist": "Artist",
+        "radio": "Radio",
+        "audiobook": "Audiobook",
+        "podcast": "Podcast"
+      }
+    },
+    "followup_enqueue": {
+      "options": {
+        "play": "Play now",
+        "replace": "Replace the queue",
+        "next": "Play next",
+        "add": "Add to the queue"
       }
     }
   }

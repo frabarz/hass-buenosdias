@@ -217,9 +217,7 @@ async def _async_configure(
         )
         if use_pending:
             try:
-                from .speak import async_speak
-
-                await async_speak(hass, config, pending["script"])
+                await coordinator.async_emit_script(hass, config, pending["script"])
                 await _async_record_script(hass, pending["script"])
                 data["pending_script"] = None
                 await store.async_mark_emitted(

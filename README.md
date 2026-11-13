@@ -21,6 +21,11 @@ OpenAI-compatible endpoint (Ollama, OpenRouter, Groq, LM Studio, …). The UI is
 translated into English, Spanish, German, and French. Requires Home Assistant
 2025.2 or newer.
 
+Optional **follow-up action**: play a Music Assistant playlist (or a script, or
+anything on a media player) once the greeting ends, or start the music first and
+let the greeting play on top of it — Music Assistant ducks its queue for that.
+See [Configuration](docs/configuration.md#follow-up-action).
+
 ## Install
 
 Via HACS (recommended):

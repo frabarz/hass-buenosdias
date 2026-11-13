@@ -11,9 +11,12 @@ API key, validated live via :func:`_async_validate_connection`). The API key
 stays in ``entry.data`` and never appears in options.
 
 Options — ``BuenosdiasOptionsFlowHandler`` (``async_step_init`` → ``llm``,
-``tts``, ``sources``, ``rss_feeds``, ``schedule``) edits behavioral settings
-only; RSS feeds are managed inline (add/edit/remove) with per-feed
-``kind``/``max_age_hours``/``max_items``/``tags``/``exclude``.
+``tts``, ``followup``, ``sources``, ``rss_feeds``, ``schedule``) edits behavioral
+settings only; RSS feeds are managed inline (add/edit/remove) with per-feed
+``kind``/``max_age_hours``/``max_items``/``tags``/``exclude``. The follow-up
+action is a two-step flow: ``followup`` picks *when* and *what*, then only the
+form of the chosen type appears (script, Music Assistant playlist, or generic
+media_player media).
 """
 
 from __future__ import annotations
@@ -59,10 +62,13 @@ from .const import (
     CONF_BASE_URL,
     CONF_CALENDAR,
     CONF_CONFIRM_REMOVE,
+    CONF_ENABLED,
+    CONF_ENQUEUE,
     CONF_ENTITY_ID,
     CONF_EXCLUDE,
     CONF_FEEDS,
     CONF_FERIADOS,
+    CONF_FOLLOWUP,
     CONF_FORECAST_LIMIT,
     CONF_FORECAST_TYPE,
     CONF_HOLIDAY_CALENDAR,
@@ -72,15 +78,21 @@ from .const import (
     CONF_MAX_AGE_HOURS,
     CONF_MAX_CHARS,
     CONF_MAX_ITEMS,
+    CONF_MEDIA_CONTENT_ID,
+    CONF_MEDIA_CONTENT_TYPE,
+    CONF_MEDIA_ID,
     CONF_MEDIA_PLAYER,
+    CONF_MEDIA_TYPE,
     CONF_MODE,
     CONF_MODEL,
     CONF_OPENAI,
     CONF_PERSONA,
+    CONF_PLAYER,
     CONF_PRELOAD_MINUTES,
     CONF_RESTORE_VOLUME,
     CONF_RSS,
     CONF_SCHEDULE,
+    CONF_SCRIPT,
     CONF_SENSORS,
     CONF_SKIP_DAYS,
     CONF_SKIP_IF_EMITTED,
@@ -88,20 +100,35 @@ from .const import (
     CONF_TAGS,
     CONF_TIME,
     CONF_TIME_ENTITY,
+    CONF_TIMEOUT,
     CONF_TTS,
+    CONF_TYPE,
     CONF_URL,
     CONF_VOLUME,
+    CONF_WAIT,
     CONF_WEATHER,
+    CONF_WHEN,
+    DEFAULT_FOLLOWUP_TIMEOUT,
     DEFAULT_FORECAST_LIMIT,
     DOMAIN,
+    ENQUEUE_PLAY,
+    ENQUEUE_REPLACE,
+    FOLLOWUP_MEDIA_PLAYER,
+    FOLLOWUP_MUSIC_ASSISTANT,
+    FOLLOWUP_NONE,
+    FOLLOWUP_SCRIPT,
     FORECAST_DAILY,
     FORECAST_HOURLY,
     FORECAST_NONE,
     KIND_EVENTS,
     KIND_NEWS,
+    MAX_FOLLOWUP_TIMEOUT,
     MAX_FORECAST_LIMIT,
+    MEDIA_TYPES,
     MODE_HA_CONVERSATION,
     MODE_OPENAI_COMPATIBLE,
+    WHEN_AFTER,
+    WHEN_BEFORE,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -173,6 +200,36 @@ _FORECAST_TYPES: list[SelectOptionDict] = [
     SelectOptionDict(label="Current conditions only", value=FORECAST_NONE),
     SelectOptionDict(label="Hourly forecast", value=FORECAST_HOURLY),
     SelectOptionDict(label="Daily forecast", value=FORECAST_DAILY),
+]
+
+_FOLLOWUP_TYPES: list[SelectOptionDict] = [
+    SelectOptionDict(label="No follow-up", value=FOLLOWUP_NONE),
+    SelectOptionDict(label="Run a script", value=FOLLOWUP_SCRIPT),
+    SelectOptionDict(
+        label="Play a Music Assistant playlist",
+        value=FOLLOWUP_MUSIC_ASSISTANT,
+    ),
+    SelectOptionDict(
+        label="Play media on a media player",
+        value=FOLLOWUP_MEDIA_PLAYER,
+    ),
+]
+
+_FOLLOWUP_WHEN: list[SelectOptionDict] = [
+    SelectOptionDict(label="After the announcement", value=WHEN_AFTER),
+    SelectOptionDict(label="Before the announcement", value=WHEN_BEFORE),
+]
+
+_FOLLOWUP_MEDIA_TYPES: list[SelectOptionDict] = [
+    SelectOptionDict(label=media_type.capitalize(), value=media_type)
+    for media_type in MEDIA_TYPES
+]
+
+_FOLLOWUP_ENQUEUE: list[SelectOptionDict] = [
+    SelectOptionDict(label="Play now", value=ENQUEUE_PLAY),
+    SelectOptionDict(label="Replace the queue", value=ENQUEUE_REPLACE),
+    SelectOptionDict(label="Play next", value="next"),
+    SelectOptionDict(label="Add to the queue", value="add"),
 ]
 
 STEP_LLM_OPTIONS_SCHEMA = vol.Schema(
@@ -262,6 +319,88 @@ STEP_SCHEDULE_OPTIONS_SCHEMA = vol.Schema(
         vol.Optional(CONF_SKIP_IF_EMITTED, default=True): BooleanSelector(),
         vol.Optional(CONF_PRELOAD_MINUTES, default=0): NumberSelector(
             NumberSelectorConfig(min=0, max=60, step=1, mode=NumberSelectorMode.BOX),
+        ),
+    },
+)
+
+STEP_FOLLOWUP_SCHEMA = vol.Schema(
+    {
+        vol.Optional(CONF_ENABLED, default=False): BooleanSelector(),
+        vol.Optional(CONF_WHEN, default=WHEN_AFTER): SelectSelector(
+            SelectSelectorConfig(
+                options=_FOLLOWUP_WHEN,
+                mode=SelectSelectorMode.DROPDOWN,
+                translation_key="followup_when",
+            ),
+        ),
+        vol.Optional(CONF_TYPE, default=FOLLOWUP_NONE): SelectSelector(
+            SelectSelectorConfig(
+                options=_FOLLOWUP_TYPES,
+                mode=SelectSelectorMode.DROPDOWN,
+                translation_key="followup_type",
+            ),
+        ),
+        vol.Optional(CONF_WAIT, default=True): BooleanSelector(),
+        vol.Optional(
+            CONF_TIMEOUT,
+            default=DEFAULT_FOLLOWUP_TIMEOUT,
+        ): NumberSelector(
+            NumberSelectorConfig(
+                min=5,
+                max=MAX_FOLLOWUP_TIMEOUT,
+                step=5,
+                mode=NumberSelectorMode.BOX,
+            ),
+        ),
+    },
+)
+
+STEP_FOLLOWUP_SCRIPT_SCHEMA = vol.Schema(
+    {
+        vol.Optional(CONF_SCRIPT): EntitySelector(
+            EntitySelectorConfig(domain="script"),
+        ),
+    },
+)
+
+STEP_FOLLOWUP_MUSIC_ASSISTANT_SCHEMA = vol.Schema(
+    {
+        vol.Optional(CONF_PLAYER): EntitySelector(
+            EntitySelectorConfig(
+                domain="media_player",
+                integration="music_assistant",
+            ),
+        ),
+        vol.Optional(CONF_MEDIA_ID): TextSelector(),
+        vol.Optional(CONF_MEDIA_TYPE, default=MEDIA_TYPES[0]): SelectSelector(
+            SelectSelectorConfig(
+                options=_FOLLOWUP_MEDIA_TYPES,
+                mode=SelectSelectorMode.DROPDOWN,
+                translation_key="followup_media_type",
+            ),
+        ),
+        vol.Optional(CONF_ENQUEUE, default=ENQUEUE_REPLACE): SelectSelector(
+            SelectSelectorConfig(
+                options=_FOLLOWUP_ENQUEUE,
+                mode=SelectSelectorMode.DROPDOWN,
+                translation_key="followup_enqueue",
+            ),
+        ),
+        vol.Optional(CONF_VOLUME): NumberSelector(
+            NumberSelectorConfig(min=0, max=1, step=0.05, mode=NumberSelectorMode.BOX),
+        ),
+    },
+)
+
+STEP_FOLLOWUP_MEDIA_PLAYER_SCHEMA = vol.Schema(
+    {
+        vol.Optional(CONF_PLAYER): EntitySelector(
+            EntitySelectorConfig(domain="media_player"),
+        ),
+        vol.Optional(CONF_MEDIA_CONTENT_ID): TextSelector(),
+        vol.Optional(CONF_MEDIA_CONTENT_TYPE): TextSelector(),
+        vol.Optional(CONF_VOLUME): NumberSelector(
+            NumberSelectorConfig(min=0, max=1, step=0.05, mode=NumberSelectorMode.BOX),
         ),
     },
 )
@@ -505,6 +644,7 @@ class BuenosdiasConfigFlow(ConfigFlow, domain=DOMAIN):
         options[CONF_TTS] = user_input.get(CONF_TTS, {})
         options[CONF_SOURCES] = user_input.get(CONF_SOURCES, {})
         options[CONF_SCHEDULE] = user_input.get(CONF_SCHEDULE, {})
+        options[CONF_FOLLOWUP] = user_input.get(CONF_FOLLOWUP, {})
         options[CONF_PERSONA] = user_input.get(CONF_PERSONA, "")
 
         return self.async_create_entry(
@@ -590,6 +730,19 @@ def _parse_tags(raw: Any) -> list[str]:
     ]
 
 
+def _parse_volume(value: Any) -> float | None:
+    """Return a valid volume level or None when the field is empty/invalid."""
+    if value in (None, ""):
+        return None
+    try:
+        level = float(value)
+    except (TypeError, ValueError):
+        return None
+    if not 0.0 <= level <= 1.0:
+        return None
+    return level
+
+
 def _normalize_time(value: Any) -> str | None:
     """Normalize a time value to 'HH:MM', dropping any seconds."""
     if not value:
@@ -637,6 +790,7 @@ class BuenosdiasOptionsFlowHandler(OptionsFlowWithConfigEntry):
         """Initialize the options flow."""
         super().__init__(config_entry)
         self._feed_index: int | None = None
+        self._followup: dict[str, Any] = {}
 
     # ---------- helpers ----------
 
@@ -687,6 +841,7 @@ class BuenosdiasOptionsFlowHandler(OptionsFlowWithConfigEntry):
             menu_options=[
                 "llm",
                 "tts",
+                "followup",
                 "sources",
                 "rss_feeds",
                 "schedule",
@@ -739,6 +894,152 @@ class BuenosdiasOptionsFlowHandler(OptionsFlowWithConfigEntry):
                 self._current_options().get(CONF_TTS, {}),
             ),
         )
+
+    # ---------- follow-up ----------
+
+    async def async_step_followup(self, user_input=None):
+        """Pick what runs around the announcement and when."""
+        current = dict(self._current_options().get(CONF_FOLLOWUP, {}))
+        errors: dict[str, str] = {}
+        if user_input is not None:
+            try:
+                timeout = int(user_input.get(CONF_TIMEOUT) or DEFAULT_FOLLOWUP_TIMEOUT)
+            except (TypeError, ValueError):
+                timeout = DEFAULT_FOLLOWUP_TIMEOUT
+            self._followup = {
+                **current,
+                CONF_ENABLED: bool(user_input.get(CONF_ENABLED, False)),
+                CONF_WHEN: user_input.get(CONF_WHEN, WHEN_AFTER),
+                CONF_TYPE: user_input.get(CONF_TYPE, FOLLOWUP_NONE),
+                CONF_WAIT: bool(user_input.get(CONF_WAIT, True)),
+                CONF_TIMEOUT: timeout,
+            }
+            followup_type = self._followup[CONF_TYPE]
+            if not self._followup[CONF_ENABLED] or followup_type == FOLLOWUP_NONE:
+                return self._save_followup()
+            step = getattr(self, f"async_step_followup_{followup_type}", None)
+            if step is None:
+                errors["base"] = "unknown"
+            else:
+                return await step()
+
+        suggested = {
+            CONF_ENABLED: bool(current.get(CONF_ENABLED, False)),
+            CONF_WHEN: current.get(CONF_WHEN, WHEN_AFTER),
+            CONF_TYPE: current.get(CONF_TYPE, FOLLOWUP_NONE),
+            CONF_WAIT: bool(current.get(CONF_WAIT, True)),
+            CONF_TIMEOUT: int(current.get(CONF_TIMEOUT, DEFAULT_FOLLOWUP_TIMEOUT) or 0)
+            or DEFAULT_FOLLOWUP_TIMEOUT,
+        }
+        return self.async_show_form(
+            step_id="followup",
+            data_schema=self.add_suggested_values_to_schema(
+                STEP_FOLLOWUP_SCHEMA,
+                suggested,
+            ),
+            errors=errors,
+        )
+
+    async def async_step_followup_script(self, user_input=None):
+        """Pick the script to run."""
+        errors: dict[str, str] = {}
+        if user_input is not None:
+            script_id = (user_input.get(CONF_SCRIPT) or "").strip()
+            if not script_id:
+                errors["base"] = "incomplete_followup"
+            else:
+                self._followup[CONF_SCRIPT] = script_id
+                return self._save_followup()
+        return self.async_show_form(
+            step_id="followup_script",
+            data_schema=self.add_suggested_values_to_schema(
+                STEP_FOLLOWUP_SCRIPT_SCHEMA,
+                {CONF_SCRIPT: self._followup.get(CONF_SCRIPT)},
+            ),
+            errors=errors,
+        )
+
+    async def async_step_followup_music_assistant(self, user_input=None):
+        """Pick the Music Assistant player and the playlist to play."""
+        suggested = {
+            CONF_PLAYER: self._followup.get(CONF_PLAYER),
+            CONF_MEDIA_ID: self._followup.get(CONF_MEDIA_ID),
+            CONF_MEDIA_TYPE: self._followup.get(CONF_MEDIA_TYPE, MEDIA_TYPES[0]),
+            CONF_ENQUEUE: self._followup.get(CONF_ENQUEUE, ENQUEUE_REPLACE),
+            CONF_VOLUME: self._followup.get(CONF_VOLUME),
+        }
+        errors: dict[str, str] = {}
+        if user_input is not None:
+            player = (user_input.get(CONF_PLAYER) or "").strip()
+            media_id = (user_input.get(CONF_MEDIA_ID) or "").strip()
+            if not player or not media_id:
+                errors["base"] = "incomplete_followup"
+            else:
+                self._followup.update(
+                    {
+                        CONF_PLAYER: player,
+                        CONF_MEDIA_ID: media_id,
+                        CONF_MEDIA_TYPE: user_input.get(
+                            CONF_MEDIA_TYPE,
+                            MEDIA_TYPES[0],
+                        ),
+                        CONF_ENQUEUE: user_input.get(CONF_ENQUEUE, ENQUEUE_REPLACE),
+                        CONF_VOLUME: _parse_volume(user_input.get(CONF_VOLUME)),
+                    },
+                )
+                return self._save_followup()
+        return self.async_show_form(
+            step_id="followup_music_assistant",
+            data_schema=self.add_suggested_values_to_schema(
+                STEP_FOLLOWUP_MUSIC_ASSISTANT_SCHEMA,
+                suggested,
+            ),
+            errors=errors,
+        )
+
+    async def async_step_followup_media_player(self, user_input=None):
+        """Pick a media_player and the media it should play."""
+        suggested = {
+            CONF_PLAYER: self._followup.get(CONF_PLAYER),
+            CONF_MEDIA_CONTENT_ID: self._followup.get(CONF_MEDIA_CONTENT_ID),
+            CONF_MEDIA_CONTENT_TYPE: self._followup.get(
+                CONF_MEDIA_CONTENT_TYPE,
+                "music",
+            ),
+            CONF_VOLUME: self._followup.get(CONF_VOLUME),
+        }
+        errors: dict[str, str] = {}
+        if user_input is not None:
+            player = (user_input.get(CONF_PLAYER) or "").strip()
+            content_id = (user_input.get(CONF_MEDIA_CONTENT_ID) or "").strip()
+            if not player or not content_id:
+                errors["base"] = "incomplete_followup"
+            else:
+                self._followup.update(
+                    {
+                        CONF_PLAYER: player,
+                        CONF_MEDIA_CONTENT_ID: content_id,
+                        CONF_MEDIA_CONTENT_TYPE: (
+                            user_input.get(CONF_MEDIA_CONTENT_TYPE) or "music"
+                        ),
+                        CONF_VOLUME: _parse_volume(user_input.get(CONF_VOLUME)),
+                    },
+                )
+                return self._save_followup()
+        return self.async_show_form(
+            step_id="followup_media_player",
+            data_schema=self.add_suggested_values_to_schema(
+                STEP_FOLLOWUP_MEDIA_PLAYER_SCHEMA,
+                suggested,
+            ),
+            errors=errors,
+        )
+
+    def _save_followup(self) -> ConfigFlowResult:
+        """Store the follow-up section in the entry options."""
+        options = self._current_options()
+        options[CONF_FOLLOWUP] = dict(self._followup)
+        return self._replace_options(options)
 
     # ---------- sources ----------
 
