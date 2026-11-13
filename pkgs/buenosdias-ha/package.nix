@@ -15,7 +15,7 @@
 buildHomeAssistantComponent rec {
   owner = "buenosdias";
   domain = "buenosdias";
-  version = "0.3.2";
+  version = "0.4.0";
 
   inherit src;
 
