@@ -17,7 +17,14 @@ from typing import TYPE_CHECKING
 
 from . import followup, script, sources
 from .const import CONF_MEDIA_PLAYER, CONF_TTS
-from .speak import PlaybackWatcher, SpeakError, async_preload, async_speak
+from .speak import (
+    PlaybackWatcher,
+    SpeakError,
+    async_announce,
+    async_preload,
+    async_speak,
+    can_announce,
+)
 
 if TYPE_CHECKING:
     from homeassistant.core import HomeAssistant
@@ -36,10 +43,23 @@ async def async_emit_script(
 ) -> None:
     """Play *text* and run the follow-up action around the announcement.
 
-    Raises :class:`SpeakError` when the TTS playback itself fails; the
-    follow-up never fails.
+    Two orderings:
+
+    - ``before``: start the media, then greet over it. With a Music Assistant
+      player the greeting is played as an announcement, so the queue ducks and
+      resumes and the music keeps running.
+    - ``after``: greet, wait for the announcement to end (``PlaybackWatcher``)
+      and only then start the media.
+
+    Raises :class:`SpeakError` when the greeting itself fails; the follow-up
+    never fails.
     """
     follow = followup.resolve(config)
+    if follow.before:
+        await followup.async_run(hass, config)
+        await _async_greet_over_media(hass, config, text, follow)
+        return
+
     media_player = config.get(CONF_TTS, {}).get(CONF_MEDIA_PLAYER, "")
     watcher = None
     if follow.after and follow.wait and media_player:
@@ -50,8 +70,6 @@ async def async_emit_script(
         ).async_start()
 
     try:
-        if follow.before:
-            await followup.async_run(hass, config)
         await async_speak(hass, config, text)
         if watcher is not None:
             await watcher.async_wait()
@@ -61,6 +79,37 @@ async def async_emit_script(
 
     if follow.after:
         await followup.async_run(hass, config)
+
+
+async def _async_greet_over_media(
+    hass: HomeAssistant,
+    config: dict,
+    text: str,
+    follow: followup.Followup,
+) -> None:
+    """Speak the greeting without cutting the media the action started.
+
+    Music Assistant can mix an announcement over its own queue; any other
+    player simply replaces what it is playing, so the follow-up has no way to
+    keep the music running. In that case the greeting still plays (with the
+    volume left alone) and the misconfiguration is logged.
+    """
+    player = config.get(CONF_TTS, {}).get(CONF_MEDIA_PLAYER, "")
+    if can_announce(hass, player):
+        await async_announce(
+            hass,
+            config,
+            text,
+            player=player,
+            volume=follow.announce_volume,
+        )
+        return
+    _LOGGER.warning(
+        "follow-up 'before' runs on %s, which cannot play announcements; "
+        "the greeting will interrupt the media instead of mixing over it",
+        player or "the configured media player",
+    )
+    await async_speak(hass, config, text, manage_volume=False)
 
 
 async def async_run(

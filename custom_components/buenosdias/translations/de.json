@@ -142,11 +142,13 @@
           "media_id": "Medien-URI",
           "media_type": "Medientyp",
           "enqueue": "Warteschlangen-Verhalten",
-          "volume": "Lautstärke"
+          "volume": "Lautstärke",
+          "announce_volume": "Lautstärke der Ansage"
         },
         "data_description": {
           "media_id": "Die Music-Assistant-URI, z. B. library://playlist/3 oder spotify://playlist/.... In der Music-Assistant-Oberfläche kopieren (drei Punkte → URI kopieren).",
-          "volume": "Lautstärke der Medien, vor dem Start gesetzt (0.0-1.0). Leer lassen, um die Lautstärke des Players zu behalten."
+          "volume": "Lautstärke der Medien, vor dem Start gesetzt (0.0-1.0). Leer lassen, um die Lautstärke des Players zu behalten.",
+          "announce_volume": "Optional, nur Music Assistant. Prozentwert, auf den die Musik während der Ansage abgesenkt wird (1-100). Leer lassen, um die in Music Assistant eingestellte Ansage-Lautstärke zu verwenden."
         }
       },
       "followup_media_player": {

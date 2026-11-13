@@ -5,6 +5,7 @@ import voluptuous as vol
 
 from custom_components.buenosdias.config_schema import CONFIG_SCHEMA
 from custom_components.buenosdias.const import (
+    CONF_ANNOUNCE_VOLUME,
     CONF_ENABLED,
     CONF_ENQUEUE,
     CONF_FOLLOWUP,
@@ -168,6 +169,8 @@ def test_schema_applies_rss_defaults():
         {DOMAIN: {CONF_FOLLOWUP: {CONF_TIMEOUT: 0}}},
         {DOMAIN: {CONF_FOLLOWUP: {"volume": 2}}},
         {DOMAIN: {CONF_FOLLOWUP: {CONF_ENQUEUE: "append"}}},
+        {DOMAIN: {CONF_FOLLOWUP: {CONF_ANNOUNCE_VOLUME: 0}}},
+        {DOMAIN: {CONF_FOLLOWUP: {CONF_ANNOUNCE_VOLUME: 101}}},
     ],
 )
 def test_schema_rejects_invalid_configuration(bad_config):
@@ -205,6 +208,7 @@ def test_schema_accepts_music_assistant_followup():
     assert followup[CONF_MEDIA_ID] == "library://playlist/3"
     assert followup["media_type"] == MEDIA_TYPE_PLAYLIST
     assert followup[CONF_ENQUEUE] == ENQUEUE_REPLACE
+    assert followup[CONF_ANNOUNCE_VOLUME] is None
 
 
 def test_schema_accepts_script_followup():
@@ -236,3 +240,10 @@ def test_schema_accepts_forecast_options():
     sources = validated[DOMAIN][CONF_SOURCES]
     assert sources[CONF_FORECAST_TYPE] == FORECAST_DAILY
     assert sources[CONF_FORECAST_LIMIT] == 3
+
+
+def test_schema_accepts_announce_volume():
+    validated = CONFIG_SCHEMA(
+        {DOMAIN: {CONF_FOLLOWUP: {CONF_ANNOUNCE_VOLUME: 35}}},
+    )
+    assert validated[DOMAIN][CONF_FOLLOWUP][CONF_ANNOUNCE_VOLUME] == 35

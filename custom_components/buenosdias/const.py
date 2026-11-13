@@ -62,6 +62,7 @@ CONF_MEDIA_CONTENT_TYPE = "media_content_type"
 CONF_SCRIPT = "script"
 CONF_WAIT = "wait"
 CONF_TIMEOUT = "timeout"
+CONF_ANNOUNCE_VOLUME = "announce_volume"
 
 WHEN_AFTER = "after"
 WHEN_BEFORE = "before"

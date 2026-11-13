@@ -6,6 +6,7 @@ import voluptuous as vol
 
 from .const import (
     CONF_AGENT,
+    CONF_ANNOUNCE_VOLUME,
     CONF_API_KEY,
     CONF_BASE_URL,
     CONF_CALENDAR,
@@ -240,6 +241,10 @@ FOLLOWUP_SCHEMA = vol.Schema(
         vol.Optional(CONF_VOLUME, default=None): vol.Any(
             None,
             vol.All(vol.Coerce(float), vol.Range(min=0.0, max=1.0)),
+        ),
+        vol.Optional(CONF_ANNOUNCE_VOLUME, default=None): vol.Any(
+            None,
+            vol.All(vol.Coerce(int), vol.Range(min=1, max=100)),
         ),
     },
     extra=vol.ALLOW_EXTRA,

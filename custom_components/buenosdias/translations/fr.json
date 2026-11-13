@@ -142,11 +142,13 @@
           "media_id": "URI du média",
           "media_type": "Type de média",
           "enqueue": "Comportement de la file",
-          "volume": "Volume"
+          "volume": "Volume",
+          "announce_volume": "Volume de l'annonce"
         },
         "data_description": {
           "media_id": "L'URI Music Assistant, par exemple library://playlist/3 ou spotify://playlist/.... À copier depuis l'interface Music Assistant (trois points → Copier l'URI).",
-          "volume": "Volume des médias, appliqué avant le démarrage (0.0-1.0). Laisser vide pour garder le volume du lecteur."
+          "volume": "Volume des médias, appliqué avant le démarrage (0.0-1.0). Laisser vide pour garder le volume du lecteur.",
+          "announce_volume": "Facultatif, Music Assistant uniquement. Pourcentage auquel la musique baisse pendant l'annonce (1-100). Laisser vide pour utiliser le volume d'annonce configuré dans Music Assistant."
         }
       },
       "followup_media_player": {

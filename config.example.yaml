@@ -80,6 +80,7 @@ buenosdias:
     wait: true               # after only: wait for the announcement to end
     timeout: 180
     # volume: 0.3            # optional, applied before the action runs
+    # announce_volume: 35    # before + Music Assistant: % the music ducks to
 
   # The persona fully controls the script's language and style. Write it in
   # any language you want the script spoken in, e.g. a Spanish persona:

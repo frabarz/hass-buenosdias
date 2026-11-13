@@ -28,7 +28,12 @@ import logging
 import time
 from typing import TYPE_CHECKING
 
-from homeassistant.components.media_player import MediaPlayerEntityFeature
+from homeassistant.components.media_player import (
+    MediaPlayerEntityFeature,
+    async_process_play_media_url,
+)
+from homeassistant.components.media_source import async_resolve_media
+from homeassistant.components.tts import generate_media_source_id
 from homeassistant.const import STATE_UNAVAILABLE, STATE_UNKNOWN
 from homeassistant.core import callback
 from homeassistant.helpers import event as ha_event
@@ -57,6 +62,13 @@ DEFAULT_VOLUME = 0.6
 #: Media player states that mean "audio is coming out right now".
 PLAYING_STATES = ("playing", "buffering")
 
+#: Feature flag for players that can mix an announcement over their queue.
+#: Missing on older Home Assistant releases, hence the defensive getattr.
+ANNOUNCE_FEATURE = int(getattr(MediaPlayerEntityFeature, "MEDIA_ANNOUNCE", 0))
+
+ANNOUNCE_DOMAIN = "music_assistant"
+ANNOUNCE_SERVICE = "play_announcement"
+
 
 class SpeakError(Exception):
     """Error playing the script via TTS."""
@@ -84,8 +96,35 @@ async def _call(
         raise SpeakError(msg) from err
 
 
-async def async_speak(hass: HomeAssistant, config: dict, text: str) -> None:
-    """Play `text` via TTS on the configured media_player."""
+async def _async_ensure_on(hass: HomeAssistant, entity_id: str) -> None:
+    """Turn the player on when it is off/idle and advertises ``TURN_ON``."""
+    state = hass.states.get(entity_id)
+    if state is None:
+        await _call(hass, "media_player", "turn_on", {"entity_id": entity_id})
+        return
+    feature_flags = int(state.attributes.get("supported_features") or 0)
+    if feature_flags & MediaPlayerEntityFeature.TURN_ON and state.state in (
+        "off",
+        "standby",
+        "idle",
+    ):
+        await _call(hass, "media_player", "turn_on", {"entity_id": entity_id})
+
+
+async def async_speak(
+    hass: HomeAssistant,
+    config: dict,
+    text: str,
+    *,
+    manage_volume: bool = True,
+) -> None:
+    """Play `text` via TTS on the configured media_player.
+
+    ``manage_volume=False`` leaves the volume alone. That is what the
+    follow-up uses when the greeting plays *on top of* music: the player is
+    already at the music volume, so ``volume_set`` would fight the ducking and
+    the restore would undo it mid-sentence.
+    """
     tts_cfg = config.get(CONF_TTS, {})
     tts_entity = tts_cfg.get(CONF_ENTITY_ID)
     media_player = tts_cfg.get(CONF_MEDIA_PLAYER)
@@ -96,21 +135,20 @@ async def async_speak(hass: HomeAssistant, config: dict, text: str) -> None:
     language = tts_cfg.get(CONF_LANGUAGE, DEFAULT_LANGUAGE)
     volume = tts_cfg.get(CONF_VOLUME, DEFAULT_VOLUME)
     restore_volume = tts_cfg.get(CONF_RESTORE_VOLUME, True)
-    previous_volume = media_player_volume(hass, media_player)
+    previous_volume = media_player_volume(hass, media_player) if manage_volume else None
 
     state = hass.states.get(media_player)
-    supports_turn_on = False
     supports_volume_set = False
     if state is not None:
         feature_flags = int(state.attributes.get("supported_features") or 0)
-        supports_turn_on = bool(feature_flags & MediaPlayerEntityFeature.TURN_ON)
         supports_volume_set = bool(feature_flags & MediaPlayerEntityFeature.VOLUME_SET)
-    if state is None or (
-        supports_turn_on and state.state in ("off", "standby", "idle")
-    ):
-        await _call(hass, "media_player", "turn_on", {"entity_id": media_player})
+    await _async_ensure_on(hass, media_player)
 
-    if supports_volume_set and (previous_volume is None or previous_volume != volume):
+    if (
+        manage_volume
+        and supports_volume_set
+        and (previous_volume is None or previous_volume != volume)
+    ):
         await _call(
             hass,
             "media_player",
@@ -131,7 +169,8 @@ async def async_speak(hass: HomeAssistant, config: dict, text: str) -> None:
     )
 
     if (
-        restore_volume
+        manage_volume
+        and restore_volume
         and supports_volume_set
         and previous_volume is not None
         and previous_volume != volume
@@ -251,6 +290,74 @@ async def async_set_volume(
         _LOGGER.warning("could not set the volume of %s: %s", entity_id, err)
         return False
     return True
+
+
+def can_announce(hass: HomeAssistant, entity_id: str) -> bool:
+    """Return True when *entity_id* is a player that can play announcements.
+
+    Two conditions: the player advertises ``MEDIA_ANNOUNCE`` (only
+    integrations that mix over their own queue do) and the
+    ``music_assistant.play_announcement`` action is registered. Older Home
+    Assistant releases do not expose the feature flag, in which case this is
+    always False and callers fall back to plain ``tts.speak``.
+    """
+    if not ANNOUNCE_FEATURE or not entity_id:
+        return False
+    has_service = getattr(hass.services, "has_service", None)
+    if has_service is None or not has_service(ANNOUNCE_DOMAIN, ANNOUNCE_SERVICE):
+        return False
+    state = hass.states.get(entity_id)
+    if state is None:
+        return False
+    features = int(state.attributes.get("supported_features") or 0)
+    return bool(features & ANNOUNCE_FEATURE)
+
+
+async def async_announce(
+    hass: HomeAssistant,
+    config: dict,
+    text: str,
+    *,
+    player: str,
+    volume: int | None = None,
+) -> None:
+    """Speak *text* over *player* as a Music Assistant announcement.
+
+    Music Assistant ducks its own queue, plays the announcement and resumes
+    it, so the music keeps running. The audio URL is generated here instead of
+    handing ``message`` + ``tts_entity_id`` to Music Assistant: that path
+    always falls back to the engine's default language, while the URL built
+    from :func:`generate_media_source_id` keeps the configured language and
+    the preloaded cache entry.
+
+    Raises :class:`SpeakError` when the audio cannot be built or the service
+    call fails.
+    """
+    tts_cfg = config.get(CONF_TTS, {})
+    tts_entity = tts_cfg.get(CONF_ENTITY_ID)
+    if not tts_entity:
+        msg = "tts.entity_id is required"
+        raise SpeakError(msg)
+    language = tts_cfg.get(CONF_LANGUAGE, DEFAULT_LANGUAGE)
+
+    try:
+        media_source_id = generate_media_source_id(
+            hass,
+            message=text,
+            engine=tts_entity,
+            language=language,
+        )
+        source = await async_resolve_media(hass, media_source_id, player)
+        url = async_process_play_media_url(hass, source.url)
+    except Exception as err:
+        msg = f"could not build the announcement audio: {err}"
+        raise SpeakError(msg) from err
+
+    data: dict = {"entity_id": player, "url": url}
+    if volume is not None:
+        data["announce_volume"] = volume
+    await _async_ensure_on(hass, player)
+    await _call(hass, ANNOUNCE_DOMAIN, ANNOUNCE_SERVICE, data)
 
 
 class PlaybackWatcher:

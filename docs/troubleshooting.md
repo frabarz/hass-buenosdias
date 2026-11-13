@@ -69,10 +69,18 @@ never ends — is described above.
 
 ## Music stops after "Before" with a non-Music-Assistant player
 
-Ducking is a Music Assistant feature: `tts.speak` sends `announce=True` and
-Music Assistant mixes the greeting over its queue. Other players replace what
-they are playing. Use **After** for those, or route the announcement through a
-Music Assistant player.
+Ducking is a Music Assistant feature: the greeting is sent as a Music Assistant
+announcement, so Music Assistant mixes it over its queue. Other players replace
+what they are playing. Home Assistant logs a warning when this happens. Use
+**After** for those players, or move the greeting to a Music Assistant player
+entity (and set it under **TTS and player**).
+
+## The announcement volume does nothing
+
+**Announcement volume** only applies with **Before**, with a Music Assistant
+player as the **TTS and player** media player, and when Music Assistant's
+`play_announcement` action is available. Otherwise the greeting is played with
+`tts.speak` and the field is ignored.
 
 ## No audio, but `last_status` is `ok`
 

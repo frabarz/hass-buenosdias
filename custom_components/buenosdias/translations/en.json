@@ -142,11 +142,13 @@
           "media_id": "Media URI",
           "media_type": "Media type",
           "enqueue": "Queue behaviour",
-          "volume": "Volume"
+          "volume": "Volume",
+          "announce_volume": "Announcement volume"
         },
         "data_description": {
           "media_id": "The Media Assistant URI, e.g. library://playlist/3 or spotify://playlist/.... Copy it from the Music Assistant UI (three dots → Copy URI).",
-          "volume": "Volume for the media, applied before it starts (0.0-1.0). Leave empty to keep the player's volume."
+          "volume": "Volume for the media, applied before it starts (0.0-1.0). Leave empty to keep the player's volume.",
+          "announce_volume": "Optional, Music Assistant only. Percentage the music ducks to while the greeting plays (1-100). Leave empty to use the announcement volume configured in Music Assistant."
         }
       },
       "followup_media_player": {

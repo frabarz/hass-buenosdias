@@ -5,6 +5,7 @@ from homeassistant.data_entry_flow import FlowResultType
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.buenosdias.const import (
+    CONF_ANNOUNCE_VOLUME,
     CONF_CALENDAR,
     CONF_CONFIRM_REMOVE,
     CONF_ENABLED,
@@ -448,6 +449,7 @@ async def test_followup_music_assistant_flow(hass):
             CONF_MEDIA_TYPE: "playlist",
             CONF_ENQUEUE: "replace",
             CONF_VOLUME: 0.3,
+            CONF_ANNOUNCE_VOLUME: 35,
         },
     )
     assert result["type"] == FlowResultType.CREATE_ENTRY
@@ -456,6 +458,7 @@ async def test_followup_music_assistant_flow(hass):
     assert followup[CONF_MEDIA_ID] == "library://playlist/3"
     assert followup[CONF_WHEN] == "before"
     assert followup[CONF_VOLUME] == 0.3
+    assert followup[CONF_ANNOUNCE_VOLUME] == 35
 
 
 async def test_followup_music_assistant_requires_player_and_media(hass):

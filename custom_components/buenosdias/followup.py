@@ -25,6 +25,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
 from .const import (
+    CONF_ANNOUNCE_VOLUME,
     CONF_ENABLED,
     CONF_ENQUEUE,
     CONF_FOLLOWUP,
@@ -70,6 +71,7 @@ class Followup:
     volume: float | None = None
     wait: bool = True
     timeout: float = DEFAULT_FOLLOWUP_TIMEOUT
+    announce_volume: int | None = None
 
     @property
     def runs(self) -> bool:
@@ -109,6 +111,13 @@ def resolve(config: dict) -> Followup:
         timeout = float(raw_timeout)
     except (TypeError, ValueError):
         _LOGGER.warning("ignoring invalid followup timeout %r", raw_timeout)
+    announce_volume = None
+    raw_announce = section.get(CONF_ANNOUNCE_VOLUME)
+    if raw_announce not in (None, ""):
+        try:
+            announce_volume = int(raw_announce)
+        except (TypeError, ValueError):
+            _LOGGER.warning("ignoring invalid announce volume %r", raw_announce)
     return Followup(
         enabled=bool(section.get(CONF_ENABLED)),
         when=str(section.get(CONF_WHEN) or WHEN_AFTER),
@@ -117,6 +126,7 @@ def resolve(config: dict) -> Followup:
         volume=volume,
         wait=bool(section.get(CONF_WAIT, True)),
         timeout=timeout,
+        announce_volume=announce_volume,
     )
 
 

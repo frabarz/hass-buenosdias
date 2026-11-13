@@ -59,6 +59,7 @@ from homeassistant.helpers.selector import (
 from .config_schema import DATE_RE, WEEKDAY_VALUES
 from .const import (
     CONF_AGENT,
+    CONF_ANNOUNCE_VOLUME,
     CONF_BASE_URL,
     CONF_CALENDAR,
     CONF_CONFIRM_REMOVE,
@@ -388,6 +389,15 @@ STEP_FOLLOWUP_MUSIC_ASSISTANT_SCHEMA = vol.Schema(
         ),
         vol.Optional(CONF_VOLUME): NumberSelector(
             NumberSelectorConfig(min=0, max=1, step=0.05, mode=NumberSelectorMode.BOX),
+        ),
+        vol.Optional(CONF_ANNOUNCE_VOLUME): NumberSelector(
+            NumberSelectorConfig(
+                min=1,
+                max=100,
+                step=5,
+                mode=NumberSelectorMode.BOX,
+                unit_of_measurement="%",
+            ),
         ),
     },
 )
@@ -743,6 +753,19 @@ def _parse_volume(value: Any) -> float | None:
     return level
 
 
+def _parse_percent(value: Any) -> int | None:
+    """Return a 1-100 percentage or None when the field is empty/invalid."""
+    if value in (None, ""):
+        return None
+    try:
+        percent = int(float(value))
+    except (TypeError, ValueError):
+        return None
+    if not 1 <= percent <= 100:
+        return None
+    return percent
+
+
 def _normalize_time(value: Any) -> str | None:
     """Normalize a time value to 'HH:MM', dropping any seconds."""
     if not value:
@@ -967,6 +990,7 @@ class BuenosdiasOptionsFlowHandler(OptionsFlowWithConfigEntry):
             CONF_MEDIA_TYPE: self._followup.get(CONF_MEDIA_TYPE, MEDIA_TYPES[0]),
             CONF_ENQUEUE: self._followup.get(CONF_ENQUEUE, ENQUEUE_REPLACE),
             CONF_VOLUME: self._followup.get(CONF_VOLUME),
+            CONF_ANNOUNCE_VOLUME: self._followup.get(CONF_ANNOUNCE_VOLUME),
         }
         errors: dict[str, str] = {}
         if user_input is not None:
@@ -985,6 +1009,9 @@ class BuenosdiasOptionsFlowHandler(OptionsFlowWithConfigEntry):
                         ),
                         CONF_ENQUEUE: user_input.get(CONF_ENQUEUE, ENQUEUE_REPLACE),
                         CONF_VOLUME: _parse_volume(user_input.get(CONF_VOLUME)),
+                        CONF_ANNOUNCE_VOLUME: _parse_percent(
+                            user_input.get(CONF_ANNOUNCE_VOLUME),
+                        ),
                     },
                 )
                 return self._save_followup()

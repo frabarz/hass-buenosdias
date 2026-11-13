@@ -138,6 +138,7 @@ def test_alarm_other_error_does_not_trigger_reauth(
     entry = _run_alarm(fake_hass, fake_trackers, monkeypatch, "network is down")
     assert not entry.reauth_started
 
+
 def test_alarm_plays_the_preloaded_script_through_the_emit_path(
     fake_hass,
     fake_trackers,
